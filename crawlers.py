@@ -34,6 +34,12 @@ class Crawler:
     def classify(self, url_data):
         return 'url_class'
 
+    def update_last_scan_date(self, page_id):
+        c = self.db.cursor()
+        c.execute('update Pages set LastScanDate=? where id=?', (datetime.datetime.now(), page_id))
+        self.db.commit()
+        c.close()
+
     def scan(self):
         SELECT = 'select p.id, p.Url, p.SiteID '\
                  'from Pages p '\
@@ -41,22 +47,22 @@ class Crawler:
         c = self.db.cursor()
         c.execute(SELECT)
         rows = 0
-        while 1:
-            row = c.fetchone()
-            if not row: break
+        for row in c.fetchall():
             rows += 1
             page_id, url, site_id = row
-            url = url if url.startswith('http://') else 'http://' + url
+            url = url if url.startswith('https://') else 'https://' + url
             try:
                 request_time = time.time()
                 rd = urllib.request.urlopen(url)
                 rd = rd.read().decode()
                 url_class = self.classify(rd)
                 request_time = time.time() - request_time
-                print('Crawler.scan (%s): %s chars, %s sec' % (url, len(rd), request_time))
+                print('Crawler.scan (%s): %s chars, in %s sec' % (url, rd, request_time))
+                self.update_last_scan_date(page_id)
             except Exception as e:
                 print('Crawler.scan (%s) exception %s' % (url, e))
 
+        c.close()
         return rows
 
     def fresh(self):
