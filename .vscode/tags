@@ -1,0 +1,22 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
+!_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
+!_TAG_PROGRAM_URL	https://ctags.io/	/official site/
+!_TAG_PROGRAM_VERSION	0.0.0	//
+Person	../persons.py	/^class Person:$/;"	kind:class	line:1
+Robot	../robots.py	/^class Robot:$/;"	kind:class	line:1
+Sitemap	../sitemap.py	/^class Sitemap:$/;"	kind:class	line:1
+__init__	../persons.py	/^    def __init__(self, person_data):$/;"	kind:member	line:2
+__init__	../robots.py	/^    def __init__(self, url):$/;"	kind:member	line:2
+__init__	../sitemap.py	/^    def __init__(self, url):$/;"	kind:member	line:2
+crawlers.py	../crawlers.py	1;"	kind:file	line:1
+main	../crawlers.py	/^def main():$/;"	kind:function	line:1
+main	../main.py	/^def main():$/;"	kind:function	line:14
+main.py	../main.py	1;"	kind:file	line:1
+mp	../main.py	/^import multiprocessing as mp$/;"	kind:namespace	line:5
+parsers.py	../parsers.py	1;"	kind:file	line:1
+persons.py	../persons.py	1;"	kind:file	line:1
+robots.py	../robots.py	1;"	kind:file	line:1
+settings.py	../settings.py	1;"	kind:file	line:1
+sitemap.py	../sitemap.py	1;"	kind:file	line:1
