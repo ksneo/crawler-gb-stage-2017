@@ -8,6 +8,13 @@ def urls_list():
             'https://yandex.ru/blog/yandexbrowser?year=2013&month=Oct',
             'https://yandex.ru/blog/yandexbrowser?year=2013&month=Sep']
 
+@pytest.fixture
+def html_urls_list():
+    return ['https://yandex.ru/blog/yandexbrowser', 
+            'https://yandex.ru/blog/yandexbrowser?year=2013&month=Nov',
+            'blog/yandexbrowser?year=2013&month=Dec',
+            '//yandex.ru/blog/yandexbrowser?year=2013&month=Oct',
+            '/blog/yandexbrowser?year=2013&month=Sep']
 
 @pytest.fixture
 def txt_sitemap():
@@ -33,7 +40,7 @@ def html_sitemap():
         <body>
             <p>Lorem ipsum dolor sit amet, <a href="https://yandex.ru/blog/yandexbrowser">consectetur adipiscing elit</a>. Quisque eleifend ex vel ligula maximus, 
             sed finibus ex feugiat. In consectetur diam at tellus pulvinar, eget dignissim nisl efficitur. 
-            Nunc a quam sed erat luctus maximus aliquet nec ante. Fusce ipsum diam, gravida a semper a, sollicitudin sit amet lacus.</p> 
+            <a href="https://yandex.ru/blog/yandexbrowser?year=2013&month=Nov">Nunc a quam sed erat luctus</a> maximus aliquet nec ante. Fusce ipsum diam, gravida a semper a, sollicitudin sit amet lacus.</p> 
             <p>Proin cursus, sapien sed facilisis maximus, <a href="blog/yandexbrowser?year=2013&month=Dec">neque arcu facilisis</a> eros, 
             nec semper urna dolor vel lacus. Vestibulum mattis <a href="//yandex.ru/blog/yandexbrowser?year=2013&month=Oct">erat quis</a>
             sagittis rutrum. Nunc fermentum justo tincidunt tempor blandit. <a href="/blog/yandexbrowser?year=2013&month=Sep">Suspendisse</a> hendrerit sagittis euismod.</p> 

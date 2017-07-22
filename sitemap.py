@@ -1,11 +1,7 @@
-import urllib.request
+from urllib.parse import urlparse
 from lxml import etree
 import io
 import re
-
-class Sitemap:
-    def __init__(self, url):
-        self.url = url
 
 def _esc_amp(text):
     """ text строка, возвращает строку с замененными & """ 
@@ -31,23 +27,30 @@ def _select_items(xml_elem, xpath):
     items = [x.text.strip() for x in xml_elem.xpath(xpath)]
     return items
 
+def _select_attrs(xml_elem, xpath):
+    """ xml_elem ETreeElement, xpath - путь поиска, с выбором атрибутов """
+    attrs = [x.strip() for x in xml_elem.xpath(xpath)]
+    return attrs
+
 def _parse_txt(content):
     """
         content - содержимое sitemap в текстовом виде
     """
-    pattern = '(?:https?:\/\/)?(?:[\w\.]+)\.(?:[a-z]{2,6}\.?)(?:\/[\w\.]*)*\/?'
-    return re.findall(pattern, content)
+    pattern = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+    return re.findall(pattern, content, re.MULTILINE)
 
 def _parse_html(content):
-    pass
+    parser = etree.HTMLParser()
+    html_tree = etree.parse(io.BytesIO(content.encode()), parser).getroot()
+    xpath = './/a/@href'
+    return _select_attrs(html_tree, xpath)
 
 def _parse_xml(content):
     """ content - содержимое sitemap, возвращает EtreeElement """
     xml = _esc_amp(content)
-    print(xml)
-    xml_elem = _get_nsless_xml(io.BytesIO(xml.encode()))
+    xml_tree = _get_nsless_xml(io.BytesIO(xml.encode()))
     xpath = 'url/loc'
-    return _select_items(xml_elem, xpath)
+    return _select_items(xml_tree, xpath)
 
 
 def get_urls(sitemap, base_url):

@@ -20,3 +20,11 @@ def describe_sitemap_module():
     def describe__parse_xml():
         def it_return_list_of_urls(xml_sitemap, urls_list):
             assert tm._parse_xml(xml_sitemap) == urls_list
+
+    def describe__parse_txt():
+        def it_return_list_of_urls(txt_sitemap, urls_list):
+            assert tm._parse_txt(txt_sitemap) == urls_list
+
+    def describe__parse_html():
+        def it_return_list_of_urls(html_sitemap, html_urls_list):
+            assert tm._parse_html(html_sitemap) == html_urls_list 
