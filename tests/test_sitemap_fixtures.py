@@ -1,6 +1,10 @@
 import pytest
 
 @pytest.fixture
+def site_url():
+    return 'https://yandex.ru'
+
+@pytest.fixture
 def urls_list():
     return ['https://yandex.ru/blog/yandexbrowser',
             'https://yandex.ru/blog/yandexbrowser?year=2013&month=Dec',
@@ -11,8 +15,8 @@ def urls_list():
 @pytest.fixture
 def html_urls_list():
     return ['https://yandex.ru/blog/yandexbrowser', 
-            'https://yandex.ru/blog/yandexbrowser?year=2013&month=Nov',
             'blog/yandexbrowser?year=2013&month=Dec',
+            'https://yandex.ru/blog/yandexbrowser?year=2013&month=Nov',
             '//yandex.ru/blog/yandexbrowser?year=2013&month=Oct',
             '/blog/yandexbrowser?year=2013&month=Sep']
 
@@ -39,9 +43,9 @@ def html_sitemap():
         </head>
         <body>
             <p>Lorem ipsum dolor sit amet, <a href="https://yandex.ru/blog/yandexbrowser">consectetur adipiscing elit</a>. Quisque eleifend ex vel ligula maximus, 
-            sed finibus ex feugiat. In consectetur diam at tellus pulvinar, eget dignissim nisl efficitur. 
+            sed finibus ex feugiat. In consectetur diam at tellus pulvinar, <a href="blog/yandexbrowser?year=2013&month=Dec">neque arcu facilisis</a> eget dignissim nisl efficitur. 
             <a href="https://yandex.ru/blog/yandexbrowser?year=2013&month=Nov">Nunc a quam sed erat luctus</a> maximus aliquet nec ante. Fusce ipsum diam, gravida a semper a, sollicitudin sit amet lacus.</p> 
-            <p>Proin cursus, sapien sed facilisis maximus, <a href="blog/yandexbrowser?year=2013&month=Dec">neque arcu facilisis</a> eros, 
+            <p>Proin cursus, sapien sed facilisis maximus,  eros, 
             nec semper urna dolor vel lacus. Vestibulum mattis <a href="//yandex.ru/blog/yandexbrowser?year=2013&month=Oct">erat quis</a>
             sagittis rutrum. Nunc fermentum justo tincidunt tempor blandit. <a href="/blog/yandexbrowser?year=2013&month=Sep">Suspendisse</a> hendrerit sagittis euismod.</p> 
         </body>
@@ -49,8 +53,38 @@ def html_sitemap():
         """
 
 @pytest.fixture
+def rec_list():
+    return  ['http://www.example.com/sitemap1.xml.gz', 
+            'http://www.example.com/sitemap2.xml.gz']
+
+@pytest.fixture
+def rec_sitemap():
+    return """<?xml version="1.0" encoding="UTF-8"?>
+
+            <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+            <sitemap>
+
+                <loc>http://www.example.com/sitemap1.xml.gz</loc>
+
+                <lastmod>2004-10-01T18:23:17+00:00</lastmod>
+
+            </sitemap>
+
+            <sitemap>
+
+                <loc>http://www.example.com/sitemap2.xml.gz</loc>
+
+                <lastmod>2005-01-01</lastmod>
+
+            </sitemap>
+
+            </sitemapindex>
+            """
+
+@pytest.fixture
 def xml_sitemap():
-    return """
+    return """<?xml version="1.0" encoding="UTF-8"?>
         <urlset 
             xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" 
             xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" 
