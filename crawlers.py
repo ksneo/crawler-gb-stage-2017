@@ -9,6 +9,7 @@ import settings
 
 class Crawler:
     def __init__(self, next_step=False):
+        """ п.1 в «Алгоритме ...» """
         self.db = settings.DB
         c = self.db.cursor()
         c.execute('select s.name, s.id '
@@ -50,7 +51,7 @@ class Crawler:
         for row in c.fetchall():
             rows += 1
             page_id, url, site_id = row
-            url = url if url.startswith('https://') else 'https://' + url
+            url = url if url.startswith('http') else 'http://' + url
             try:
                 request_time = time.time()
                 rd = urllib.request.urlopen(url)
