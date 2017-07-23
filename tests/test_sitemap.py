@@ -51,3 +51,8 @@ def describe_sitemap_module():
 
         def it_return_tuple_of_urls_rec(rec_sitemap, site_url, rec_list):
             assert tm.get_urls(rec_sitemap, site_url) == ([], rec_list)
+
+        def it_logging_warning_if_broken_file(xml_sitemap_bad, site_url, caplog):
+            res = tm.get_urls(xml_sitemap_bad, site_url)
+            assert 'sitemap.get_urls' in caplog.text()
+            assert res == ([], [])

@@ -114,8 +114,7 @@ def xml_sitemap():
 
 @pytest.fixture
 def xml_sitemap_clean():
-    return """
-        <urlset>
+    return """<urlset>
             <url>
                 <loc>https://yandex.ru/blog/yandexbrowser</loc>
             </url>
@@ -136,3 +135,12 @@ def xml_sitemap_clean():
             </url>
         </urlset>
         """
+
+@pytest.fixture
+def xml_sitemap_bad():
+    return """<?xml version="1.0" encoding="UTF-8"?>
+        <urlset>
+            <url>
+                <loc>https://yandex.ru/blog/yandexbrowser</loc>
+            </url>
+"""
