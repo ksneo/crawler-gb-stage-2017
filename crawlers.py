@@ -17,12 +17,12 @@ class Crawler:
         print('Crawler.__init__ ...')
         self.db = settings.DB
         c = self.db.cursor()
-        c.execute('select s.name, s.id '
-                  'from Sites s '
-                  'left join Pages p on (p.SiteID=s.ID) '
+        c.execute('select s.Name, s.ID '
+                  'from sites s '
+                  'left join pages p on (p.SiteID=s.ID) '
                   'where p.id is Null')
-        INSERT = 'insert into Pages(SiteID, Url) values (?, ?)'
-        ARGS = [(r[1], '%s/robots.txt' % r[0]) for r in c.fetchall()]
+        INSERT = 'insert into pages(SiteID, Url, LastScanDate, FoundDateTime) values (%s, %s, %s, %s)'
+        ARGS = [(r[1], '%s/robots.txt' % r[0], None, datetime.datetime.now()) for r in c.fetchall()]
         c.close()
         c = self.db.cursor()
         try:
@@ -31,7 +31,7 @@ class Crawler:
             self.db.commit()
         except Exception as e:
             self.db.rollback()
-            print('Crawler exception', e)
+            print('Crawler exception 1 ', e, ARGS)
         c.close()
 
         if next_step:
@@ -43,15 +43,15 @@ class Crawler:
 
     def update_last_scan_date(self, page_id):
         c = self.db.cursor()
-        c.execute('update Pages set LastScanDate=? where id=?',
+        c.execute('update pages set LastScanDate=%s where ID=%s',
                   (datetime.datetime.now(), page_id))
         self.db.commit()
         c.close()
 
     def scan(self):
-        SELECT = 'select distinct p.id, p.Url, p.SiteID, s.name '\
-                 'from Pages p '\
-                 'join Sites s on (s.ID=p.SiteID) '\
+        SELECT = 'select distinct p.id, p.Url, p.SiteID, s.Name '\
+                 'from pages p '\
+                 'join sites s on (s.ID=p.SiteID) '\
                  'where p.LastScanDate is null'
         c = self.db.cursor()
         c.execute(SELECT)
@@ -89,7 +89,7 @@ class Crawler:
                     # url_class = self.classify(rd)
                     if url.upper().endswith('ROBOTS.TXT'):
                         # print('Crawler: обработка %s ...' % url)
-                        urls, sitemaps = list({r for r in re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', rd)}), []
+                        urls, sitemaps = list({r for r in re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', rd.decode())}), []
 
                         # urls, sitemaps = [(site_id, r.split(':')[1],) for r in rd.split('\n')
                         #             if r.strip().upper().startswith('SITEMAP:')], []
@@ -101,9 +101,9 @@ class Crawler:
                             print(base_url, rd[:20], ' ... ', rd[-20:], e)
                             # urls, sitemaps = [], []
                     urls += sitemaps
-                    urls = [(site_id, u) for u in urls if url]
+                    urls = [(site_id, u, datetime.datetime.now(), None) for u in urls if url]
                     # print('Crawler: urls %s' % urls)
-                    INSERT = 'insert into Pages (SiteID, url) values (?, ?)'
+                    INSERT = 'insert into pages (SiteID, Url, FoundDateTime, LastScanDate) values (%s, %s, %s, %s)'
                     c = self.db.cursor()
                     c.executemany(INSERT, urls)
                     self.db.commit()
