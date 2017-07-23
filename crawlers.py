@@ -5,10 +5,10 @@ import urllib.request
 import re
 import gzip
 import time
-import html.parser
 import lxml
 import settings
 import sitemap
+import parsers
 
 
 class Crawler:
@@ -34,12 +34,22 @@ class Crawler:
             print('Crawler exception 1 ', e, ARGS)
         c.close()
 
+        self.keywords = self.load_persons()
         if next_step:
             print('Crawler: переходим к шагу 2 ...')
             scan_result = self.scan()
 
-    def classify(self, url_data):
-        return 'url_class'
+    def load_persons(self):
+        c = self.db.cursor()
+        SELECT = 'select distinct Name, PersonID from keywords'
+        c.execute(SELECT)
+        keywords = {}
+        for n, i in c.fetchall():
+            if not i in keywords.keys():
+                keywords[i] = []
+            keywords[i] += [n, ]
+        c.close()
+        return keywords
 
     def update_last_scan_date(self, page_id):
         c = self.db.cursor()
@@ -47,6 +57,25 @@ class Crawler:
                   (datetime.datetime.now(), page_id))
         self.db.commit()
         c.close()
+
+    def update_person_page_rank(self, page_id, ranks):
+        if ranks:
+            SELECT = 'select id from person_page_rank where PageID=%s and PersonID=%s'
+            UPDATE = 'update person_page_rank set Rank=%s where ID=%s'
+            INSERT = 'insert into person_page_rank (PageID, PersonID, Rank) values (%s, %s, %s)'
+            for person_id, rank in ranks.items():
+                c = self.db.cursor()
+                c.execute(SELECT, (page_id, person_id))
+                rank_id = c.fetchone()
+                c.close()
+                # Реализация INSERT OR UPDATE, т.к. кое кто отказался добавить UNIQUE_KEY :)
+                c = self.db.cursor()
+                if rank_id:
+                    c.execute(UPDATE, (rank, rank_id))
+                else:
+                    c.execute(INSERT, (page_id, person_id, rank))
+                self.db.commit()
+                c.close()
 
     def scan(self):
         SELECT = 'select distinct p.id, p.Url, p.SiteID, s.Name '\
@@ -60,6 +89,7 @@ class Crawler:
         rows = 0
         for row in pages:
             rows += 1
+            print(row)
             page_id, url, site_id, base_url = row
             url = ('http://' + url) if not (url.startswith('http://') or url.startswith('https://')) else url
             # if url.startswith('http://')
@@ -77,6 +107,9 @@ class Crawler:
                     if not url.strip().endswith('.gz'):
                         rd = rd.read()
                     else:
+                        """
+                            sitemap.xml.gz
+                        """
                         mem = BytesIO(rd.read())
                         mem.seek(0)
                         f = gzip.GzipFile(fileobj=mem, mode='rb')
@@ -84,22 +117,21 @@ class Crawler:
                 except Exception as e:
                     print('Crowlrer.read exception', e, url)
                 else:
-                    # if url.endswith('.xml.gz'):
-                    #     print(url, rd)
-                    # url_class = self.classify(rd)
                     if url.upper().endswith('ROBOTS.TXT'):
-                        # print('Crawler: обработка %s ...' % url)
                         urls, sitemaps = list({r for r in re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', rd.decode())}), []
-
-                        # urls, sitemaps = [(site_id, r.split(':')[1],) for r in rd.split('\n')
-                        #             if r.strip().upper().startswith('SITEMAP:')], []
-                        # print('Crawler: %s.sitemap: %s' % (url, urls))
                     else:
                         try:
                             urls, sitemaps = sitemap.get_urls(rd.decode(), base_url)
+                            rd = rd.decode()
                         except Exception as e:
                             print(base_url, rd[:20], ' ... ', rd[-20:], e)
-                            # urls, sitemaps = [], []
+                            urls, sitemaps = [], []
+                        else:
+                            if sitemap._get_sitemap_type(rd.split('\n')[0]) == sitemap.SM_TYPE_HTML:
+                                print('Crawler.html.parsing ...')
+                                ranks = parsers.parse_html(rd, self.keywords)
+                                print('Crawler:', ranks)
+                                self.update_person_page_rank(page_id, ranks)
                     urls += sitemaps
                     urls = [(site_id, u, datetime.datetime.now(), None) for u in urls if url]
                     # print('Crawler: urls %s' % urls)
@@ -108,8 +140,6 @@ class Crawler:
                     c.executemany(INSERT, urls)
                     self.db.commit()
                     c.close()
-                    # print('Crawler.scan (%s): %s, in %s sec, urls: %s' %
-                            # (base_url, urls, request_time, urls))
                     self.update_last_scan_date(page_id)
             request_time = time.time() - request_time
         return rows
