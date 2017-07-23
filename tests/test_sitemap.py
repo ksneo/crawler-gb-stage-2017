@@ -55,4 +55,4 @@ def describe_sitemap_module():
         def it_logging_warning_if_broken_file(xml_sitemap_bad, site_url, caplog):
             res = tm.get_urls(xml_sitemap_bad, site_url)
             assert 'sitemap.get_urls' in caplog.text()
-            assert res == ([], 0)
+            assert res == ([], [])
