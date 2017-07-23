@@ -5,6 +5,7 @@ import time
 import html.parser
 import lxml
 import settings
+import sitemap
 
 
 class Crawler:
@@ -42,16 +43,18 @@ class Crawler:
         c.close()
 
     def scan(self):
-        SELECT = 'select p.id, p.Url, p.SiteID '\
+        SELECT = 'select p.id, p.Url, p.SiteID, s.name '\
                  'from Pages p '\
+                 'join Sites s on (s.ID=p.SiteID) '\
                  'where p.LastScanDate is null'
         c = self.db.cursor()
         c.execute(SELECT)
         rows = 0
         for row in c.fetchall():
             rows += 1
-            page_id, url, site_id = row
+            page_id, url, site_id, base_url = row
             url = url if url.startswith('http') else 'http://' + url
+            urls = []
             try:
                 request_time = time.time()
                 rd = urllib.request.urlopen(url)
@@ -61,11 +64,15 @@ class Crawler:
                 rd = rd.read().decode()
                 # url_class = self.classify(rd)
                 if url.upper().endswith('ROBOTS.TXT'):
-                    sitemaps = {r.split(':')[1] for r in robots.split('\n')
-                                if trim(r).upper().startswith('SITEMAP:')}
-                    # TODO: Скинуть в базу
+                    sitemaps = [(site_id, r.split(':')[1],) for r in robots.split('\n')
+                                if trim(r).upper().startswith('SITEMAP:')]
+                    INSERT = 'insert into Pages (SiteID, url) values (?, ?)'
+                    c = self.db.cursor()
+                    c.executemany(INSERT, sitemaps)
+                else:
+                    urls, sitemaps = sitemap.get_urls(rd, base_url)
                 request_time = time.time() - request_time
-                print('Crawler.scan (%s): %s chars, in %s sec' % (url, rd, request_time))
+                print('Crawler.scan (%s): %s chars, in %s sec' % (base_url, request_time, urls, sitemaps))
                 self.update_last_scan_date(page_id)
 
         c.close()
