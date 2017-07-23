@@ -128,7 +128,7 @@ class Crawler:
                             urls, sitemaps = [], []
                         else:
                             if sitemap._get_sitemap_type(rd.split('\n')[0]) == sitemap.SM_TYPE_HTML:
-                                print('Crawler.html.parsing ...')
+                                print('Crawler.html.parsing ...', self.keywords)
                                 ranks = parsers.parse_html(rd, self.keywords)
                                 print('Crawler:', ranks)
                                 self.update_person_page_rank(page_id, ranks)
