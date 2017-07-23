@@ -1,7 +1,9 @@
+#!/usr/bin/python3
 from urllib.parse import urlparse, ParseResult
 from lxml import etree
 import io
 import re
+import logging
 
 SM_TYPE_XML = 0
 SM_TYPE_HTML = 1
@@ -17,7 +19,7 @@ def _esc_amp(text):
 def _get_nsless_xml(xml):
     """ xml - bytes[], возращает root ETreeElement """
     # убираем namespaces из xml
-    it = etree.iterparse(xml, recover=True)
+    it = etree.iterparse(xml) # it = etree.iterparse(xml, recover=True) если хотим чтобы не падало на неправильных xml
     for _, el in it:
         if '}' in el.tag:
             el.tag = el.tag.split('}', 1)[1]  # strip all namespaces
@@ -101,15 +103,16 @@ def get_urls(sitemap, base_url):
     urls_list = []
     sitemap_list = []
     sitemap_type = _get_sitemap_type(sitemap)
-    
-    if sitemap_type == SM_TYPE_XML:
-        urls_list = _parse_xml(sitemap, 'url/loc')
-    elif sitemap_type == SM_TYPE_HTML:
-        urls_list = [_normalize_url(url, base_url) for url in _parse_html(sitemap)]
-        print(urls_list)
-    elif sitemap_type == SM_TYPE_TXT:
-        urls_list = _parse_txt(sitemap)
-    elif sitemap_type == SM_TYPE_REC:
-        sitemap_list = _parse_xml(sitemap, 'sitemap/loc')
+    try:
+        if sitemap_type == SM_TYPE_XML:
+            urls_list = _parse_xml(sitemap, 'url/loc')
+        elif sitemap_type == SM_TYPE_HTML:
+            urls_list = [_normalize_url(url, base_url) for url in _parse_html(sitemap)]
+        elif sitemap_type == SM_TYPE_TXT:
+            urls_list = _parse_txt(sitemap)
+        elif sitemap_type == SM_TYPE_REC:
+            sitemap_list = _parse_xml(sitemap, 'sitemap/loc')
+    except Exception as ex:
+        logging.error("sitemap.get_urls: site %s, error %s", base_url, ex)
 
     return (urls_list, sitemap_list)
