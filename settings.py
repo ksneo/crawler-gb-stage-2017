@@ -2,4 +2,4 @@
 import sqlite3 as sq
 """db_connector
     Пути"""
-DB = sq.connect('crawler.db')
+# DB = sq.connect('crawler.db')
