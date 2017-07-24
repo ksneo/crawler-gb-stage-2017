@@ -76,24 +76,51 @@ class Crawler:
                     c.execute(INSERT, (page_id, person_id, rank))
                 self.db.commit()
                 c.close()
+    
+    def _get_content(url):
+        try:
+            rd = urllib.request.url(url)
+        except Exception as e:
+            logging.error('_get_content (%s) exception %s', url, e)
+            return ""
+        
+        content = ""
+        if url.strip().endswith('.gz'):
+            mem = BytesIO(rd.read())
+            mem.seek(0)
+            f = gzip.GzipFile(fileobj=mem, mode='rb')
+            content = f.read().decode()
+        else:
+            content = rd.read().decode()
 
-    def scan(self):
+        return content
+    
+    def _get_pages_rows(last_scan_date, db):
         SELECT = 'select distinct p.id, p.Url, p.SiteID, s.Name '\
                  'from pages p '\
-                 'join sites s on (s.ID=p.SiteID) '\
-                 'where p.LastScanDate is null'
-        c = self.db.cursor()
-        c.execute(SELECT)
-        pages = c.fetchall()
-        c.close()
+                 'join sites s on (s.ID=p.SiteID)'
+        
+        if last_scan_date is None:
+            WHERE = 'where p.LastScanDate is null'
+        else:
+            WHERE = 'where p.LastScanDate = %s'
+
+        query = ' '.join(SELECT, WHERE)
+        
+        with db.cursor() as c:
+            c.execute(query, (last_scan_date))
+            pages = c.fetchall()
+
+        return pages
+
+    def scan(self):
+        pages = _get_pages_rows(None, self.db)
         rows = 0
         for row in pages:
             rows += 1
             print(row)
             page_id, url, site_id, base_url = row
-            url = ('http://' + url) if not (url.startswith('http://') or url.startswith('https://')) else url
-            # if url.startswith('http://')
-            # elif url.startswith('https://') else ('https://' + url)
+            
 
             urls = []
             request_time = time.time()
