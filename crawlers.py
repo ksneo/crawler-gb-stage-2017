@@ -113,6 +113,9 @@ class Crawler:
 
         return pages
 
+    def _is_robot_txt(url):
+        return url.upper().endswith('ROBOTS.TXT')
+
     def scan(self):
         pages = _get_pages_rows(None, self.db)
         rows = 0
@@ -124,6 +127,15 @@ class Crawler:
 
             urls = []
             request_time = time.time()
+
+            content = self._get_content(url)
+            
+            if self._is_robot_txt(url):
+
+            else:
+
+            
+            
             try:
                 # print('Загрузка', url)
                 rd = urllib.request.urlopen(url)
@@ -145,7 +157,7 @@ class Crawler:
                     print('Crowlrer.read exception', e, url)
                 else:
                     if url.upper().endswith('ROBOTS.TXT'):
-                        urls, sitemaps = list({r for r in re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', rd.decode())}), []
+                        
                     else:
                         try:
                             urls, sitemaps = sitemap.get_urls(rd.decode(), base_url)
