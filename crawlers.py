@@ -138,13 +138,20 @@ class Crawler:
             решение взято отсюда 
             https://stackoverflow.com/questions/3164505/mysql-insert-record-if-not-exists-in-table
         """
+        logging.info('Crawler._add_urls inserting %s', len(pages_data))
+
         INSERT = ('INSERT INTO pages (SiteID, Url, FoundDateTime, LastScanDate) ' 
                 'SELECT * FROM (SELECT %s, %s, %s, %s) AS tmp '
                 'WHERE NOT EXISTS (SELECT Url FROM pages WHERE Url = %s ) LIMIT 1')
         c = db.cursor()
-        c.executemany(INSERT, pages_data)
-        db.commit()
-        rows = c.rowcount
+        #c.executemany(INSERT, pages_data)
+        rows = 0
+        for page in pages_data:
+            c.execute(INSERT, page)
+            row = c.rowcount
+            rows = rows + (row if row > 0 else 0)
+            db.commit()
+        
         c.close()
         return rows 
 
