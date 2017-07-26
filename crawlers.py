@@ -63,7 +63,7 @@ class Crawler:
             SELECT = 'select id from person_page_rank where PageID=%s and PersonID=%s'
             UPDATE = 'update person_page_rank set Rank=%s where ID=%s'
             INSERT = 'insert into person_page_rank (PageID, PersonID, Rank) values (%s, %s, %s)'
-            for person_id, rank in ranks.items():
+            for person_id, rank in ranks.items() if rank > 0:
                 c = self.db.cursor()
                 c.execute(SELECT, (page_id, person_id))
                 rank_id = c.fetchone()
