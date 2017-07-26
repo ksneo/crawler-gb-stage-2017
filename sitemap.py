@@ -4,11 +4,14 @@ from lxml import etree
 import io
 import re
 import logging
+from log import log_with
+
 
 SM_TYPE_XML = 0
 SM_TYPE_HTML = 1
 SM_TYPE_TXT = 2
 SM_TYPE_REC = 3 # рекурсивный sitemap содержит ссылки на другие sitemap
+
 
 def _esc_amp(text):
     """ text строка, возвращает строку с замененными & """ 
@@ -93,7 +96,7 @@ def _normalize_url(url, base_url):
         netloc = bs_url.netloc
     return ParseResult(scheme, netloc, path, params, query, fragment).geturl()
 
-
+@log_with
 def get_urls(sitemap, base_url):
     """ 
         sitemap - содержимое сайтмэпа str, 

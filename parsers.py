@@ -4,6 +4,7 @@ import re
 import logging
 from lxml import etree
 from collections import Counter
+from log import log_with
 
 def _count_words(words_list, words_dict):
     """
@@ -28,7 +29,7 @@ def _extract_text(page_content):
     html_text = ' '.join([text.strip() for text in html_body.xpath('body//*/text()')])
     return html_text
 
-
+@log_with
 def _split_text(page_text, min_len):
     """
         функция разбивает текст на слова и возвращает список со словами длинне max_len
