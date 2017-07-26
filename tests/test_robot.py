@@ -16,4 +16,4 @@ def describe_robots_module():
             rp = RobotsTxt()
             rp.set_url(robot_url)
             rp.read()
-            assert rp.sitemaps == list_ya_sitemaps
+            assert not (set(rp.sitemaps) - set(list_ya_sitemaps))
