@@ -22,7 +22,7 @@ def _esc_amp(text):
 def _get_nsless_xml(xml):
     """ xml - bytes[], возращает root ETreeElement """
     # убираем namespaces из xml
-    it = etree.iterparse(xml, recover=True) # it = etree.iterparse(xml, recover=True) если хотим чтобы не падало на неправильных xml
+    it = etree.iterparse(xml) # it = etree.iterparse(xml, recover=True) если хотим чтобы не падало на неправильных xml
     for _, el in it:
         if '}' in el.tag:
             el.tag = el.tag.split('}', 1)[1]  # strip all namespaces
@@ -101,7 +101,7 @@ def get_urls(sitemap, base_url):
     """ 
         sitemap - содержимое сайтмэпа str, 
         base_url - адрес сайта с протоколом http://example.com
-        возвращает tuple c двумя списками 
+        возвращает tuple c типом контента и списком ссылок
     """
     urls_list = []
     sitemap_list = []
@@ -118,4 +118,4 @@ def get_urls(sitemap, base_url):
     except Exception as ex:
         logging.error("sitemap.get_urls: site %s, error %s", base_url, ex)
 
-    return (urls_list, sitemap_list)
+    return (sitemap_type, urls_list + sitemap_list)
