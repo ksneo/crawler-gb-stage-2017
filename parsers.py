@@ -6,6 +6,7 @@ from lxml import etree
 from collections import Counter
 from log import log_with
 
+
 def _count_words(words_list, words_dict):
     """
         words_list - список слов для поиска и подсчета
@@ -29,6 +30,7 @@ def _extract_text(page_content):
     html_text = ' '.join([text.strip() for text in html_body.xpath('body//*/text()')])
     return html_text
 
+
 @log_with
 def _split_text(page_text, min_len):
     """
@@ -37,6 +39,7 @@ def _split_text(page_text, min_len):
         над регуляркой можно поработать, это самая простая и вроде дает адекватный результат
     """
     return [word.lower() for word in re.split(r'\W+', page_text) if len(word) > min_len]
+
 
 def parse_html(page_content, words_dict):
     """

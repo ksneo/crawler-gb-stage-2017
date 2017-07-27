@@ -65,9 +65,11 @@ class Crawler:
             else:
                 content = self._get_content(url)
                 urls, sitemaps = sitemap.get_urls(content, base_url)
+                ranks = parsers.parse_html(content, self.keywords)
+                print(url, ranks)
 
             urls += sitemaps
-            pages_data = [(site_id, u, datetime.datetime.now(), None, u) for u in urls if url]
+            pages_data = [(site_id, u, datetime.datetime.now(), None) for u in urls if url]
             urls_count = database._add_urls(pages_data)
             add_urls_count = add_urls_count + (urls_count if urls_count > 0 else 0)
             request_time = time.time() - request_time

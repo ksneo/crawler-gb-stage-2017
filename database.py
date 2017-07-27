@@ -1,5 +1,6 @@
 import datetime
 import logging
+import hashlib
 import settings
 
 
@@ -20,9 +21,10 @@ def load_persons():
 def _add_robots():
     """ Добавляет в pages ссылки на robots.txt, если их нет для определенных сайтов """
     db = settings.DB
-    INSERT = 'insert into pages(SiteID, Url, LastScanDate, FoundDateTime) values (%s, %s, %s, %s)'
+    INSERT = 'insert into pages(SiteID, Url, LastScanDate, FoundDateTime, hash_url) values (%s, %s, %s, %s, %s)'
     new_sites = _not_have_pages()
-    ARGS = [(r[1], '%s/robots.txt' % r[0], None, datetime.datetime.now()) for r in new_sites]
+    ARGS = [(r[1], '%s/robots.txt' % r[0], None, datetime.datetime.now(), hashlib.md5(('%s/robots.txt' % r[0]).encode()).hexdigest()) for r in new_sites]
+    # _add_urls()
     c = db.cursor()
 
     try:
@@ -103,26 +105,32 @@ def _get_pages_rows(last_scan_date):
 def _add_urls(pages_data):
     db = settings.DB
     """
-        pages_data - tuple(siteid, url, founddatatime, lastscandate, url)
-        db - соединение с базой данных
+        pages_data - tuple(siteid, url, founddatatime, lastscandate)
         добавляет url в таблицу pages если такой ссылки нет
         решение взято отсюда
         https://stackoverflow.com/questions/3164505/mysql-insert-record-if-not-exists-in-table
     """
     logging.info('Crawler._add_urls inserting %s', len(pages_data))
 
-    INSERT = ('INSERT INTO pages (SiteID, Url, FoundDateTime, LastScanDate) '
-            'SELECT * FROM (SELECT %s, %s, %s, %s) AS tmp '
-            'WHERE NOT EXISTS (SELECT Url FROM pages WHERE Url = %s ) LIMIT 1')
+    # INSERT = ('INSERT INTO pages (SiteID, Url, FoundDateTime, LastScanDate) '
+    #         'SELECT * FROM (SELECT %s, %s, %s, %s) AS tmp '
+    #         'WHERE NOT EXISTS (SELECT Url FROM pages WHERE Url = %s ) LIMIT 1')
+    INSERT = 'insert into pages (SiteID, Url, FoundDateTime, LastScanDate, hash_url) '\
+             'values (%s, %s, %s, %s, %s)'
     c = db.cursor()
     #c.executemany(INSERT, pages_data)
     rows = 0
     for page in pages_data:
-        c.execute(INSERT, page)
-        row = c.rowcount
-        rows = rows + (row if row > 0 else 0)
-        db.commit()
-
+        page += (hashlib.md5(page[1].encode()).hexdigest(),)
+        try:
+            print('_add_urls', (page, ))
+            c.execute(INSERT, page)
+            row = c.rowcount
+            rows = rows + (row if row > 0 else 0)
+            db.commit()
+        except Exception as e:
+            print('_add_urls exception ', e)
+            db.rollback()
     c.close()
     return rows
 
