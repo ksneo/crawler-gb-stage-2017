@@ -14,7 +14,7 @@ SM_TYPE_REC = 3 # рекурсивный sitemap содержит ссылки �
 
 
 def _esc_amp(text):
-    """ text строка, возвращает строку с замененными & """ 
+    """ text строка, возвращает строку с замененными & """
     # замена & на &amp;
     return re.sub(r'&(?!amp;)', r'&amp;', text, re.MULTILINE)
 
@@ -38,7 +38,7 @@ def _get_sitemap_type(sitemap):
     xml_pattern = "<urlset"
     html_pattern = "<!DOCTYPE"
     rec_pattern = "<sitemapindex"
-    
+
     if sitemap.find(xml_pattern) >= 0:
         return SM_TYPE_XML
     elif sitemap.find(html_pattern) >= 0:
@@ -47,6 +47,7 @@ def _get_sitemap_type(sitemap):
         return SM_TYPE_REC
     else:
         return SM_TYPE_TXT
+
 
 def _select_items(xml_elem, xpath):
     """ xml_elem ETreeElement, xpath - путь поиска, возвращает список урлов в элементе """
@@ -77,6 +78,7 @@ def _parse_html(content):
     xpath = './/a/@href'
     return _select_attrs(html_root, xpath)
 
+
 def _parse_xml(content, xpath):
     """
         content - содержимое sitemap в текстовом xml
@@ -96,12 +98,13 @@ def _normalize_url(url, base_url):
         netloc = bs_url.netloc
     return ParseResult(scheme, netloc, path, params, query, fragment).geturl()
 
+
 @log_with
 def get_urls(sitemap, base_url):
-    """ 
-        sitemap - содержимое сайтмэпа str, 
+    """
+        sitemap - содержимое сайтмэпа str,
         base_url - адрес сайта с протоколом http://example.com
-        возвращает tuple c двумя списками 
+        возвращает tuple c двумя списками
     """
     urls_list = []
     sitemap_list = []
