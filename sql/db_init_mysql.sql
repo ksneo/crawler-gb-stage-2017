@@ -231,8 +231,10 @@ CREATE TABLE `pages` (
   `FoundDateTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `LastScanDate` datetime(6) DEFAULT NULL,
   `SiteID` int(11) NOT NULL,
+  `hash_url` varchar(32) DEFAULT NULL,
   PRIMARY KEY (`ID`),
   KEY `pages_SiteID_98e9f259_fk_sites_ID` (`SiteID`),
+  UNIQUE KEY `hash_url` (`hash_url`),
   CONSTRAINT `pages_SiteID_98e9f259_fk_sites_ID` FOREIGN KEY (`SiteID`) REFERENCES `sites` (`ID`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2589350 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
