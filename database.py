@@ -4,8 +4,8 @@ import hashlib
 import settings
 
 
-def load_persons():
-    db = settings.DB
+def load_persons(db):
+    # db = settings.DB
     c = db.cursor()
     SELECT = 'select distinct Name, PersonID from keywords'
     c.execute(SELECT)
@@ -18,9 +18,9 @@ def load_persons():
     return keywords
 
 
-def _add_robots():
+def _add_robots(db):
     """ Добавляет в pages ссылки на robots.txt, если их нет для определенных сайтов """
-    db = settings.DB
+    # db = settings.DB
     # INSERT = 'insert into pages(SiteID, Url, FoundDateTime, LastScanDate) values (%s, %s, %s, %s)'
     new_sites = _not_have_pages()
     # ARGS = [(r[1], '%s/robots.txt' % r[0], None, datetime.datetime.now(), hashlib.md5(('%s/robots.txt' % r[0]).encode()).hexdigest()) for r in new_sites]
@@ -40,9 +40,9 @@ def _add_robots():
     return add_robots
     """
 
-def _not_have_pages():
+def _not_have_pages(db):
     """ Возвращает rows([site_name, site_id]) у которых нет страниц"""
-    db = settings.DB
+    # db = settings.DB
     c = db.cursor()
     c.execute('select s.Name, s.ID '
                 'from sites s '
@@ -53,9 +53,9 @@ def _not_have_pages():
     return rows
 
 
-def update_person_page_rank(page_id, ranks):
+def update_person_page_rank(db, page_id, ranks):
     if ranks:
-        db = settings.DB
+        # db = settings.DB
         SELECT = 'select id from person_page_rank where PageID=%s and PersonID=%s'
         UPDATE = 'update person_page_rank set Rank=%s where ID=%s'
         INSERT = 'insert into person_page_rank (PageID, PersonID, Rank) values (%s, %s, %s)'
@@ -74,9 +74,9 @@ def update_person_page_rank(page_id, ranks):
             c.close()
 
 
-def update_last_scan_date(page_id):
+def update_last_scan_date(db, page_id):
     print('update_last_scan_date %s' % page_id)
-    db = settings.DB
+    # db = settings.DB
     c = db.cursor()
     c.execute('update pages set LastScanDate=%s where ID=%s',
                 (datetime.datetime.now(), page_id))
@@ -85,8 +85,8 @@ def update_last_scan_date(page_id):
     print('update_last_scan_date %s complete...' % page_id)
 
 
-def _get_pages_rows(last_scan_date):
-    db = settings.DB
+def _get_pages_rows(db, last_scan_date):
+    # db = settings.DB
     SELECT = ('select p.id, p.Url, p.SiteID, s.Name '
                 'from pages p '
                 'join sites s on (s.ID=p.SiteID)')
@@ -105,8 +105,8 @@ def _get_pages_rows(last_scan_date):
     return pages
 
 
-def _add_urls(pages_data):
-    db = settings.DB
+def _add_urls(db, pages_data):
+    # db = settings.DB
     """
         pages_data - tuple(siteid, url, founddatatime, lastscandate)
         добавляет url в таблицу pages если такой ссылки нет
