@@ -18,10 +18,8 @@ from robots import RobotsTxt
 class Crawler:
     def __init__(self, next_step=False):
         """ п.1 в «Алгоритме ...» """
-        # self.db = db
-        database._add_robots()
-
         self.keywords = database.load_persons()
+        
         if next_step:
             print('Crawler: переходим к шагу 2 ...')
             scan_result = self.scan()
@@ -70,7 +68,7 @@ class Crawler:
 
             urls += sitemaps
             pages_data = [(site_id, u, datetime.datetime.now(), None) for u in urls if url]
-            urls_count = database._add_urls(pages_data)
+            urls_count = database.add_urls(pages_data)
             add_urls_count = add_urls_count + (urls_count if urls_count > 0 else 0)
             request_time = time.time() - request_time
             database.update_last_scan_date(page_id)
@@ -81,7 +79,8 @@ class Crawler:
         return add_urls_count
 
     def scan(self):
-        pages = database._get_pages_rows(None)
+        database.add_robots()
+        pages = database.get_pages_rows(None)
         rows = self.scan_urls(pages)
         logging.info('Add %s new urls on date %s', rows, 'NULL')
 

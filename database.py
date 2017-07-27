@@ -18,7 +18,7 @@ def load_persons(db=settings.DB):
     return keywords
 
 
-def _add_robots(db=settings.DB):
+def add_robots(db=settings.DB):
     """ Добавляет в pages ссылки на robots.txt, если их нет для определенных сайтов """
     # db = settings.DB
     # INSERT = 'insert into pages(SiteID, Url, FoundDateTime, LastScanDate) values (%s, %s, %s, %s)'
@@ -85,7 +85,7 @@ def update_last_scan_date(page_id, db=settings.DB):
     print('update_last_scan_date %s complete...' % page_id)
 
 
-def _get_pages_rows(last_scan_date, db=settings.DB):
+def get_pages_rows(last_scan_date, db=settings.DB):
     # db = settings.DB
     SELECT = ('select p.id, p.Url, p.SiteID, s.Name '
                 'from pages p '
