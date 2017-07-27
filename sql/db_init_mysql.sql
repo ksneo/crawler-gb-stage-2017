@@ -1,6 +1,10 @@
 -- MySQL dump 10.13  Distrib 5.7.17, for Win64 (x86_64)
 --
+<<<<<<< HEAD
 -- Host: localhost    Database: dbwpmod
+=======
+-- Host: localhost    Database: dbwebpro
+>>>>>>> fa2524c73a5a077fd936f53323fc02a982861510
 -- ------------------------------------------------------
 -- Server version	5.5.5-10.1.23-MariaDB-9+deb9u1
 
@@ -16,6 +20,7 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+<<<<<<< HEAD
 -- Table structure for table `auth_group`
 --
 
@@ -254,10 +259,55 @@ CREATE TABLE `person_page_rank` (
   KEY `person_page_rank_PersonID_e5138c65_fk_persons_ID` (`PersonID`),
   CONSTRAINT `person_page_rank_PageID_d0ea7ac6_fk_pages_ID` FOREIGN KEY (`PageID`) REFERENCES `pages` (`ID`),
   CONSTRAINT `person_page_rank_PersonID_e5138c65_fk_persons_ID` FOREIGN KEY (`PersonID`) REFERENCES `persons` (`ID`)
+=======
+-- Table structure for table `Keywords`
+--
+
+DROP TABLE IF EXISTS `Keywords`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `Keywords` (
+  `ID` int(11) NOT NULL,
+  `Name` varchar(256) NOT NULL,
+  `PersonID` int(11) NOT NULL,
+  PRIMARY KEY (`ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `Pages`
+--
+
+DROP TABLE IF EXISTS `Pages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `Pages` (
+  `ID` int(11) NOT NULL,
+  `Url` varchar(2048) NOT NULL,
+  `SiteID` int(11) NOT NULL,
+  `FoundDeteTime` datetime NOT NULL,
+  `LastScanDate` datetime DEFAULT NULL,
+  PRIMARY KEY (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `PersonPageRank`
+--
+
+DROP TABLE IF EXISTS `PersonPageRank`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `PersonPageRank` (
+  `PersonID` int(11) NOT NULL,
+  `PageID` int(11) NOT NULL,
+  `Rank` int(11) DEFAULT NULL
+>>>>>>> fa2524c73a5a077fd936f53323fc02a982861510
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+<<<<<<< HEAD
 -- Table structure for table `persons`
 --
 
@@ -283,6 +333,33 @@ CREATE TABLE `sites` (
   `Name` varchar(256) NOT NULL,
   PRIMARY KEY (`ID`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+=======
+-- Table structure for table `Persons`
+--
+
+DROP TABLE IF EXISTS `Persons`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `Persons` (
+  `ID` int(11) NOT NULL,
+  `Name` varchar(256) NOT NULL,
+  PRIMARY KEY (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `Sites`
+--
+
+DROP TABLE IF EXISTS `Sites`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `Sites` (
+  `ID` int(11) NOT NULL,
+  `Name` varchar(256) NOT NULL,
+  PRIMARY KEY (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+>>>>>>> fa2524c73a5a077fd936f53323fc02a982861510
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -294,4 +371,8 @@ CREATE TABLE `sites` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
+<<<<<<< HEAD
 -- Dump completed on 2017-07-26 16:02:23
+=======
+-- Dump completed on 2017-07-22 16:05:57
+>>>>>>> fa2524c73a5a077fd936f53323fc02a982861510

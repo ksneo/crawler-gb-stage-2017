@@ -14,7 +14,11 @@ SM_TYPE_REC = 3 # рекурсивный sitemap содержит ссылки �
 
 
 def _esc_amp(text):
+<<<<<<< HEAD
     """ text строка, возвращает строку с замененными & """
+=======
+    """ text строка, возвращает строку с замененными & """ 
+>>>>>>> fa2524c73a5a077fd936f53323fc02a982861510
     # замена & на &amp;
     return re.sub(r'&(?!amp;)', r'&amp;', text, re.MULTILINE)
 
@@ -38,7 +42,11 @@ def _get_sitemap_type(sitemap):
     xml_pattern = "<urlset"
     html_pattern = "<!DOCTYPE"
     rec_pattern = "<sitemapindex"
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> fa2524c73a5a077fd936f53323fc02a982861510
     if sitemap.find(xml_pattern) >= 0:
         return SM_TYPE_XML
     elif sitemap.find(html_pattern) >= 0:
@@ -48,7 +56,10 @@ def _get_sitemap_type(sitemap):
     else:
         return SM_TYPE_TXT
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> fa2524c73a5a077fd936f53323fc02a982861510
 def _select_items(xml_elem, xpath):
     """ xml_elem ETreeElement, xpath - путь поиска, возвращает список урлов в элементе """
     items = [x.text.strip() for x in xml_elem.xpath(xpath)]
@@ -78,7 +89,10 @@ def _parse_html(content):
     xpath = './/a/@href'
     return _select_attrs(html_root, xpath)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> fa2524c73a5a077fd936f53323fc02a982861510
 def _parse_xml(content, xpath):
     """
         content - содержимое sitemap в текстовом xml
@@ -98,6 +112,7 @@ def _normalize_url(url, base_url):
         netloc = bs_url.netloc
     return ParseResult(scheme, netloc, path, params, query, fragment).geturl()
 
+<<<<<<< HEAD
 
 @log_with
 def get_urls(sitemap, base_url):
@@ -105,6 +120,14 @@ def get_urls(sitemap, base_url):
         sitemap - содержимое сайтмэпа str,
         base_url - адрес сайта с протоколом http://example.com
         возвращает tuple c двумя списками
+=======
+@log_with
+def get_urls(sitemap, base_url):
+    """ 
+        sitemap - содержимое сайтмэпа str, 
+        base_url - адрес сайта с протоколом http://example.com
+        возвращает tuple c двумя списками 
+>>>>>>> fa2524c73a5a077fd936f53323fc02a982861510
     """
     urls_list = []
     sitemap_list = []
