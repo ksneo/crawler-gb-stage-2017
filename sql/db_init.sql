@@ -28,8 +28,12 @@ CREATE TABLE Pages (
     Url           VARCHAR (2048) NOT NULL ON CONFLICT ROLLBACK,
     SiteID        INTEGER        NOT NULL ON CONFLICT ROLLBACK,
     FoundDeteTime DATETIME       NOT NULL ON CONFLICT ROLLBACK,
-    LastScanDate  DATETIME
+    LastScanDate  DATETIME,
+    Url_md5       VARCHAR (32)
 );
+create trigger pages_insert before insert on pages for each row begin set new.url_md5 = md5(new.url); end;
+CREATE UNIQUE INDEX unique_url_hash on Pages (Url_md5);
+
 
 
 -- Таблица: PersonPageRank
