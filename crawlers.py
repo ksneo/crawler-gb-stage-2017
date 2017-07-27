@@ -1,81 +1,96 @@
 #!/usr/bin/python3
 import datetime
+from io import BytesIO
 import urllib.request
+import re
+import gzip
 import time
-import html.parser
 import lxml
+import logging
+import log
 import settings
+import sitemap
+import parsers
+import database
+from robots import RobotsTxt
 
 
 class Crawler:
     def __init__(self, next_step=False):
         """ п.1 в «Алгоритме ...» """
-        self.db = settings.DB
-        c = self.db.cursor()
-        c.execute('select s.name, s.id '
-                  'from Sites s '
-                  'left join Pages p on (p.SiteID=s.ID) '
-                  'where p.id is Null')
-        INSERT = 'insert into Pages(SiteID, Url) values (?, ?)'
-        ARGS = [(r[1], '%s/robots.txt' % r[0]) for r in c.fetchall()]
-        c.close()
-        c = self.db.cursor()
-        try:
-            # print(ARGS)
-            c.executemany(INSERT, ARGS)
-            self.db.commit()
-        except Exception as e:
-            self.db.rollback()
-            print('Crawler exception', e)
-        c.close()
+        # self.db = db
+        database._add_robots()
 
+        self.keywords = database.load_persons()
         if next_step:
+            print('Crawler: переходим к шагу 2 ...')
             scan_result = self.scan()
 
-    def classify(self, url_data):
-        return 'url_class'
+    def _get_content(self, url):
+        try:
+            rd = urllib.request.urlopen(url)
+        except Exception as e:
+            logging.error('_get_content (%s) exception %s', url, e)
+            return ""
 
-    def update_last_scan_date(self, page_id):
-        c = self.db.cursor()
-        c.execute('update Pages set LastScanDate=? where id=?', (datetime.datetime.now(), page_id))
-        self.db.commit()
-        c.close()
+        content = ""
+        if url.strip().endswith('.gz'):
+            mem = BytesIO(rd.read())
+            mem.seek(0)
+            f = gzip.GzipFile(fileobj=mem, mode='rb')
+            content = f.read().decode()
+        else:
+            content = rd.read().decode()
+
+        return content
+
+    def _is_robot_txt(self, url):
+        return url.upper().endswith('ROBOTS.TXT')
+
+    def scan_urls(self, pages, max_limit=0):
+        add_urls_count = 0
+        for row in pages:
+            page_id, url, site_id, base_url = row
+            request_time = time.time()
+            logging.info('#BEGIN url %s, base_url %s', url, base_url)
+            urls = []
+            sitemaps = []
+            content = ""
+
+            if self._is_robot_txt(url):
+                robots_file = RobotsTxt(url)
+                robots_file.read()
+                sitemaps = robots_file.sitemaps
+                #logging.info('find_maps: %s', sitemaps)
+            else:
+                content = self._get_content(url)
+                urls, sitemaps = sitemap.get_urls(content, base_url)
+                ranks = parsers.parse_html(content, self.keywords)
+                print(url, ranks)
+
+            urls += sitemaps
+            pages_data = [(site_id, u, datetime.datetime.now(), None) for u in urls if url]
+            urls_count = database._add_urls(pages_data)
+            add_urls_count = add_urls_count + (urls_count if urls_count > 0 else 0)
+            request_time = time.time() - request_time
+            database.update_last_scan_date(page_id)
+            logging.info('#END url %s, base_url %s, add urls %s, time %s',
+                        url, base_url, urls_count, request_time)
+            if max_limit > 0 and add_urls_count >= max_limit:
+                break
+        return add_urls_count
 
     def scan(self):
-        SELECT = 'select p.id, p.Url, p.SiteID '\
-                 'from Pages p '\
-                 'where p.LastScanDate is null'
-        c = self.db.cursor()
-        c.execute(SELECT)
-        rows = 0
-        for row in c.fetchall():
-            rows += 1
-            page_id, url, site_id = row
-            url = url if url.startswith('http') else 'http://' + url
-            try:
-                request_time = time.time()
-                rd = urllib.request.urlopen(url)
-            except Exception as e:
-                print('Crawler.scan (%s) exception %s' % (url, e))
-            else:
-                rd = rd.read().decode()
-                # url_class = self.classify(rd)
-                if url.upper().endswith('ROBOTS.TXT'):
-                    sitemaps = {r.split(':')[1] for r in robots.split('\n')
-                                if trim(r).upper().startswith('SITEMAP:')}
-                    # TODO: Скинуть в базу
-                request_time = time.time() - request_time
-                print('Crawler.scan (%s): %s chars, in %s sec' % (url, rd, request_time))
-                self.update_last_scan_date(page_id)
-
-        c.close()
-        return rows
+        pages = database._get_pages_rows(None)
+        rows = self.scan_urls(pages)
+        logging.info('Add %s new urls on date %s', rows, 'NULL')
 
     def fresh(self):
         SELECT = ''
 
+
 if __name__ == '__main__':
-    c = Crawler()
+    db = settings.DB
+    c = Crawler(db)
     c.scan()
     c.fresh()
-

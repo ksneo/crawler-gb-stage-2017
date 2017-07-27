@@ -5,11 +5,14 @@ import random
 import multiprocessing as mp
 import logging
 import settings
-import sqlite
+# import sqlite3
 
-import Robot from Robot
-import Sitemap from sitemap
-import Crawler from crawlers
+# import Robot from Robot
+import sitemap
+from crawlers import Crawler
 
-def main():
-    
+
+if __name__ == '__main__':
+    c = Crawler()
+    c.scan()
+    c.fresh()
