@@ -6,10 +6,6 @@ from lxml import etree
 from collections import Counter
 from log import log_with
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fa2524c73a5a077fd936f53323fc02a982861510
 def _count_words(words_list, words_dict):
     """
         words_list - список слов для поиска и подсчета
@@ -33,10 +29,6 @@ def _extract_text(page_content):
     html_text = ' '.join([text.strip() for text in html_body.xpath('body//*/text()')])
     return html_text
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fa2524c73a5a077fd936f53323fc02a982861510
 @log_with
 def _split_text(page_text, min_len):
     """
@@ -46,10 +38,6 @@ def _split_text(page_text, min_len):
     """
     return [word.lower() for word in re.split(r'\W+', page_text) if len(word) > min_len]
 
-<<<<<<< HEAD
-
-=======
->>>>>>> fa2524c73a5a077fd936f53323fc02a982861510
 def parse_html(page_content, words_dict):
     """
         page_content - контент страницы
