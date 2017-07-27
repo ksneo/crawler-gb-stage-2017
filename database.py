@@ -4,7 +4,7 @@ import hashlib
 import settings
 
 
-def load_persons(db):
+def load_persons(db=settings.DB):
     # db = settings.DB
     c = db.cursor()
     SELECT = 'select distinct Name, PersonID from keywords'
@@ -18,7 +18,7 @@ def load_persons(db):
     return keywords
 
 
-def _add_robots(db):
+def _add_robots(db=settings.DB):
     """ Добавляет в pages ссылки на robots.txt, если их нет для определенных сайтов """
     # db = settings.DB
     # INSERT = 'insert into pages(SiteID, Url, FoundDateTime, LastScanDate) values (%s, %s, %s, %s)'
@@ -40,7 +40,7 @@ def _add_robots(db):
     return add_robots
     """
 
-def _not_have_pages(db):
+def _not_have_pages(db=settings.DB):
     """ Возвращает rows([site_name, site_id]) у которых нет страниц"""
     # db = settings.DB
     c = db.cursor()
@@ -53,7 +53,7 @@ def _not_have_pages(db):
     return rows
 
 
-def update_person_page_rank(db, page_id, ranks):
+def update_person_page_rank(page_id, ranks, db=settings.DB):
     if ranks:
         # db = settings.DB
         SELECT = 'select id from person_page_rank where PageID=%s and PersonID=%s'
@@ -74,7 +74,7 @@ def update_person_page_rank(db, page_id, ranks):
             c.close()
 
 
-def update_last_scan_date(db, page_id):
+def update_last_scan_date(page_id, db=settings.DB):
     print('update_last_scan_date %s' % page_id)
     # db = settings.DB
     c = db.cursor()
@@ -85,7 +85,7 @@ def update_last_scan_date(db, page_id):
     print('update_last_scan_date %s complete...' % page_id)
 
 
-def _get_pages_rows(db, last_scan_date):
+def _get_pages_rows(last_scan_date, db=settings.DB):
     # db = settings.DB
     SELECT = ('select p.id, p.Url, p.SiteID, s.Name '
                 'from pages p '
@@ -105,7 +105,7 @@ def _get_pages_rows(db, last_scan_date):
     return pages
 
 
-def _add_urls(db, pages_data):
+def _add_urls(pages_data, db=settings.DB):
     # db = settings.DB
     """
         pages_data - tuple(siteid, url, founddatatime, lastscandate)
