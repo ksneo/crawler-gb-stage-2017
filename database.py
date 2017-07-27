@@ -21,12 +21,13 @@ def load_persons():
 def _add_robots():
     """ Добавляет в pages ссылки на robots.txt, если их нет для определенных сайтов """
     db = settings.DB
-    INSERT = 'insert into pages(SiteID, Url, LastScanDate, FoundDateTime, hash_url) values (%s, %s, %s, %s, %s)'
+    # INSERT = 'insert into pages(SiteID, Url, FoundDateTime, LastScanDate) values (%s, %s, %s, %s)'
     new_sites = _not_have_pages()
-    ARGS = [(r[1], '%s/robots.txt' % r[0], None, datetime.datetime.now(), hashlib.md5(('%s/robots.txt' % r[0]).encode()).hexdigest()) for r in new_sites]
-    # _add_urls()
+    # ARGS = [(r[1], '%s/robots.txt' % r[0], None, datetime.datetime.now(), hashlib.md5(('%s/robots.txt' % r[0]).encode()).hexdigest()) for r in new_sites]
+    ARGS = [(r[1], '%s/robots.txt' % r[0], datetime.datetime.now(), None,) for r in new_sites]
+    _add_urls(ARGS)
+    """
     c = db.cursor()
-
     try:
         c.executemany(INSERT, ARGS)
         db.commit()
@@ -37,7 +38,7 @@ def _add_robots():
     c.close()
     logging.info('_add_robots: %s robots url was add', add_robots)
     return add_robots
-
+    """
 
 def _not_have_pages():
     """ Возвращает rows([site_name, site_id]) у которых нет страниц"""
