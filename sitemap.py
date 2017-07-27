@@ -22,7 +22,7 @@ def _esc_amp(text):
 def _get_nsless_xml(xml):
     """ xml - bytes[], возращает root ETreeElement """
     # убираем namespaces из xml
-    it = etree.iterparse(xml) # it = etree.iterparse(xml, recover=True) если хотим чтобы не падало на неправильных xml
+    it = etree.iterparse(xml, recover=True) # it = etree.iterparse(xml, recover=True) если хотим чтобы не падало на неправильных xml
     for _, el in it:
         if '}' in el.tag:
             el.tag = el.tag.split('}', 1)[1]  # strip all namespaces
@@ -96,7 +96,7 @@ def _normalize_url(url, base_url):
         netloc = bs_url.netloc
     return ParseResult(scheme, netloc, path, params, query, fragment).geturl()
 
-@log_with
+#@log_with
 def get_urls(sitemap, base_url):
     """ 
         sitemap - содержимое сайтмэпа str, 
