@@ -75,12 +75,14 @@ def update_person_page_rank(page_id, ranks):
 
 
 def update_last_scan_date(page_id):
+    print('update_last_scan_date %s' % page_id)
     db = settings.DB
     c = db.cursor()
     c.execute('update pages set LastScanDate=%s where ID=%s',
                 (datetime.datetime.now(), page_id))
     db.commit()
     c.close()
+    print('update_last_scan_date %s complete...' % page_id)
 
 
 def _get_pages_rows(last_scan_date):
