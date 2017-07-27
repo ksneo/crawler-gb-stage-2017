@@ -116,13 +116,13 @@ def _add_urls(pages_data):
     # INSERT = ('INSERT INTO pages (SiteID, Url, FoundDateTime, LastScanDate) '
     #         'SELECT * FROM (SELECT %s, %s, %s, %s) AS tmp '
     #         'WHERE NOT EXISTS (SELECT Url FROM pages WHERE Url = %s ) LIMIT 1')
-    INSERT = 'insert into pages (SiteID, Url, FoundDateTime, LastScanDate, hash_url) '\
-             'values (%s, %s, %s, %s, %s)'
+    INSERT = 'insert into pages (SiteID, Url, FoundDateTime, LastScanDate) '\
+             'values (%s, %s, %s, %s)'
     c = db.cursor()
     #c.executemany(INSERT, pages_data)
     rows = 0
     for page in pages_data:
-        page += (hashlib.md5(page[1].encode()).hexdigest(),)
+        # page += (hashlib.md5(page[1].encode()).hexdigest(),)
         try:
             print('_add_urls', (page, ))
             c.execute(INSERT, page)
@@ -133,5 +133,6 @@ def _add_urls(pages_data):
             print('_add_urls exception ', e)
             db.rollback()
     c.close()
+    print('_add_urls completed...')
     return rows
 

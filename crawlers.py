@@ -50,7 +50,7 @@ class Crawler:
     def scan_urls(self, pages, max_limit=0):
         add_urls_count = 0
         for row in pages:
-            _, url, site_id, base_url = row
+            page_id, url, site_id, base_url = row
             request_time = time.time()
             logging.info('#BEGIN url %s, base_url %s', url, base_url)
             urls = []
@@ -73,6 +73,7 @@ class Crawler:
             urls_count = database._add_urls(pages_data)
             add_urls_count = add_urls_count + (urls_count if urls_count > 0 else 0)
             request_time = time.time() - request_time
+            database.update_last_scan_date(page_id)
             logging.info('#END url %s, base_url %s, add urls %s, time %s',
                         url, base_url, urls_count, request_time)
             if max_limit > 0 and add_urls_count >= max_limit:
