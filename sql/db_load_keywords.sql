@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 5.7.17, for Win64 (x86_64)
 --
--- Host: localhost    Database: dbwpmod
+-- Host: localhost    Database: dbwebpro
 -- ------------------------------------------------------
 -- Server version	5.5.5-10.1.23-MariaDB-9+deb9u1
 
@@ -34,4 +34,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-07-26 16:04:41
+-- Dump completed on 2017-07-28 15:31:49
