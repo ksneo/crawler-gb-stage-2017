@@ -27,6 +27,7 @@ class Crawler:
             scan_result = self.scan()
 
     def _get_content(self, url):
+        print('%s loading ...', url)
         try:
             rd = urllib.request.urlopen(url)
         except Exception as e:
@@ -42,6 +43,7 @@ class Crawler:
         else:
             content = rd.read().decode()
 
+        print('%s loaded ...%s bytes' % (url, len(content)))
         return content
 
     def _is_robot_txt(self, url):
@@ -52,7 +54,7 @@ class Crawler:
         for row in pages:
             page_id, url, site_id, base_url = row
             request_time = time.time()
-            logging.info('#BEGIN url %s, base_url %s', url, base_url)
+            logging.info('#BEGIN %s url %s, base_url %s' % (page_id, url, base_url))
             urls = []
             sitemaps = []
             content = ""
@@ -82,7 +84,8 @@ class Crawler:
 
     def scan(self):
         pages = database._get_pages_rows(None)
-        rows = self.scan_urls(pages)
+        print('Crawler.scan: pages=%s' % len(pages))
+        rows = self.scan_urls(pages, 10)
         logging.info('Add %s new urls on date %s', rows, 'NULL')
 
     def fresh(self):

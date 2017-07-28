@@ -126,15 +126,15 @@ def _add_urls(pages_data, db=settings.DB):
     for page in pages_data:
         # page += (hashlib.md5(page[1].encode()).hexdigest(),)
         try:
-            print('_add_urls', (page, ))
             c.execute(INSERT, page)
             row = c.rowcount
             rows = rows + (row if row > 0 else 0)
             db.commit()
+            print('_add_urls', (page, ))
         except Exception as e:
             print('_add_urls exception ', e)
             db.rollback()
     c.close()
-    print('_add_urls completed...')
+    print('_add_urls %s completed...' % rows)
     return rows
 
