@@ -129,9 +129,6 @@ def add_urls(pages_data, db=settings.DB):
             db.rollback()
     
     c.close()
-<<<<<<< HEAD
     print('_add_urls %s completed...' % rows)
-=======
->>>>>>> 29b20014962c5d344bc503445e088c52147031ce
     return rows
 
