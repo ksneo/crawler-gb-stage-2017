@@ -20,6 +20,7 @@ class Crawler:
         """ п.1 в «Алгоритме ...» """
         self.max_limit = max_limit
         self.keywords = database.load_persons()
+        print('Crawlrer.keywords', self.keywords)
 
 
         if next_step:
