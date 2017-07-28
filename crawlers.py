@@ -65,7 +65,8 @@ class Crawler:
             logging.info('#BEGIN url %s, base_url %s', url, base_url)
             urls = []
             content = ""
-
+            page_type = None
+            
             if self._is_robot_txt(url):
                 robots_file = RobotsTxt(url)
                 robots_file.read()
