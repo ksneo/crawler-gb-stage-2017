@@ -55,7 +55,7 @@ def update_person_page_rank(page_id, ranks, db=settings.DB):
         SELECT = 'select id from person_page_rank where PageID=%s and PersonID=%s'
         UPDATE = 'update person_page_rank set Rank=%s where ID=%s'
         INSERT = 'insert into person_page_rank (PageID, PersonID, Rank) values (%s, %s, %s)'
-        for person_id, rank in ranks.items():
+        for person_id, rank in ranks.items() if rank > 0:
             # Реализация INSERT OR UPDATE, т.к. кое кто отказался добавить UNIQUE_KEY :)
             c = db.cursor()
             c.execute(SELECT, (page_id, person_id))
