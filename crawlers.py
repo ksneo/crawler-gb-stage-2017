@@ -79,9 +79,6 @@ class Crawler:
                 content = self._get_content(url)
                 page_type, urls = sitemap.get_urls(content, base_url)
 
-            if page_type != sitemap.SM_TYPE_HTML:
-                database.update_last_scan_date(page_id)
-
             new_pages_data = [{
                 'site_id': site_id,
                 'url': u,
@@ -93,6 +90,10 @@ class Crawler:
             add_urls_count = add_urls_count + (urls_count if urls_count > 0 else 0)
             request_time = time.time() - request_time
 
+            if page_type != sitemap.SM_TYPE_HTML:
+                database.update_last_scan_date(page_id)
+
+
             logging.info('#END url %s, base_url %s, add urls %s, time %s',
                         url, base_url, urls_count, request_time)
             if self.max_limit > 0 and add_urls_count >= self.max_limit:
@@ -103,7 +104,7 @@ class Crawler:
         database.add_robots()
         pages = database.get_pages_rows(None)
         print('Crawler.scan: pages=%s' % len(pages))
-        rows = self.scan_urls(pages, 10)
+        rows = self.scan_urls(pages)
         # rows = self.scan_urls(pages)
         logging.info('Add %s new urls on date %s', rows, 'NULL')
 

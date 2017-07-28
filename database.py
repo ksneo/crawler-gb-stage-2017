@@ -24,14 +24,15 @@ def add_robots(db=settings.DB):
     new_sites = _not_have_pages()
     # ARGS = [(r[1], '%s/robots.txt' % r[0], None, datetime.datetime.now(), hashlib.md5(('%s/robots.txt' % r[0]).encode()).hexdigest()) for r in new_sites]
     ARGS = [{
-            'site_id': r[1], 
-            'url': '%s/robots.txt' % r[0], 
-            'found_date_time': datetime.datetime.now(), 
+            'site_id': r[1],
+            'url': '%s/robots.txt' % r[0],
+            'found_date_time': datetime.datetime.now(),
             'last_scan_date': None } for r in new_sites]
     add_robots = add_urls(ARGS)
-    
+
     logging.info('add_robots: %s robots url was add', add_robots)
     return add_robots
+
 
 def _not_have_pages(db=settings.DB):
     """ Возвращает rows([site_name, site_id]) у которых нет страниц"""
@@ -127,6 +128,7 @@ def add_urls(pages_data, db=settings.DB):
             print('+', end='', flush=True)
         except Exception as e:
             # logging.error('add_urls exception %s', e)
+            # print('add_urls exception %s', e)
             print('.', end='', flush=True)
             db.rollback()
 

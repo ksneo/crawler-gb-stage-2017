@@ -4,4 +4,4 @@ import MySQLdb
 """db_connector
     Пути"""
 # DB = sq.connect('crawler.db')
-DB=MySQLdb.connect(host='127.0.0.1',user='andrewisakov',password='thua8Ohj',db='dbwpmod')
+DB=MySQLdb.connect(host='127.0.0.1', user='andrewisakov', password='thua8Ohj', db='dbwpmod')
