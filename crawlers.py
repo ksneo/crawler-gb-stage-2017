@@ -20,15 +20,15 @@ class Crawler:
         """ п.1 в «Алгоритме ...» """
         self.max_limit = max_limit
         self.keywords = database.load_persons()
-        print('Crawlrer.keywords', self.keywords)
+        # print('Crawlrer.keywords', self.keywords)
 
 
         if next_step:
-            print('Crawler: переходим к шагу 2 ...')
+            # print('Crawler: переходим к шагу 2 ...')
             scan_result = self.scan()
 
     def _get_content(self, url):
-        print('%s loading ...', url)
+        # print('%s loading ...', url)
         try:
             rd = urllib.request.urlopen(url)
         except Exception as e:
@@ -82,10 +82,6 @@ class Crawler:
             else:
                 content = self._get_content(url)
                 page_type, urls = sitemap.get_urls(content, base_url)
-                if page_type == sitemap.SM_TYPE_HTML:
-                    print('scan_url', content[:100])
-                    ranks = self.process_ranks(content, page_id)
-                    database.update_person_page_rank(page_id, ranks)
 
             new_pages_data = [{
                 'site_id': site_id,

@@ -18,22 +18,22 @@ def describe_crawlers_module():
         def it_method_scan_urls_return_add_urls_count(test_db):
             add_robots()
             pages = get_pages_rows(None, test_db)
-            crawler = Crawler()
-            add_urls_count = crawler.scan_urls(pages, 300)
+            crawler = Crawler(max_limit=300)
+            add_urls_count = crawler.scan_urls(pages)
             assert add_urls_count == 1
         
         #@pytest.mark.skip(reason="no way of currently testing this")
         def it_method_scan_urls_return_add_urls_count_2(test_db):
             pages = get_pages_rows(None, test_db)
-            crawler = Crawler()
-            add_urls_count = crawler.scan_urls(pages, 1000)
+            crawler = Crawler(max_limit=1000)
+            add_urls_count = crawler.scan_urls(pages)
             assert add_urls_count == 48
         
         @pytest.mark.skip(reason="very long operation 54s")
         def it_method_scan_urls_return_add_urls_count_3(test_db):
             pages = get_pages_rows(None, test_db)
-            crawler = Crawler()
-            add_urls_count = crawler.scan_urls(pages, 50000)
+            crawler = Crawler(max_limit=50000)
+            add_urls_count = crawler.scan_urls(pages)
             assert add_urls_count == 51770
 
         def it_method_process_ranks_update_ranks(page_content):
