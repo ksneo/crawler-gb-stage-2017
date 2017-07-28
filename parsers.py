@@ -56,6 +56,7 @@ def parse_html(page_content, words_dict):
     min_len = 3 # минимальная длина слова которе считается словом
     result = {}
     print('parse_html %s in %s started ...' % (words_dict, len(page_content)))
+    logging.info('parse_html: %s', words_dict)
     try:
         html_text = _extract_text(page_content)
         words_list = _split_text(html_text, min_len)

@@ -50,10 +50,12 @@ class Crawler:
     def _is_robot_txt(self, url):
         return url.upper().endswith('ROBOTS.TXT')
 
-    def proccess_ranks(self, content, page_id):
+    def process_ranks(self, content, page_id):
+        logging.info('process_ranks: %s', content)
         ranks = parsers.parse_html(content, self.keywords)
-        # database.update_last_scan_date(page_id)
-        return ranks
+        logging.info('process_ranks: %s', ranks)
+        database.update_person_page_rank(page_id, ranks)
+        database.update_last_scan_date(page_id)
 
     def scan_urls(self, pages):
         """
