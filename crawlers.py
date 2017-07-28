@@ -16,15 +16,19 @@ from robots import RobotsTxt
 
 
 class Crawler:
-    def __init__(self, next_step=False):
+    def __init__(self, next_step=False, max_limit=0):
         """ п.1 в «Алгоритме ...» """
+        self.max_limit = max_limit
         self.keywords = database.load_persons()
-        
+        print('Crawlrer.keywords', self.keywords)
+
+
         if next_step:
             print('Crawler: переходим к шагу 2 ...')
             scan_result = self.scan()
 
     def _get_content(self, url):
+        print('%s loading ...', url)
         try:
             rd = urllib.request.urlopen(url)
         except Exception as e:
@@ -40,6 +44,7 @@ class Crawler:
         else:
             content = rd.read().decode()
 
+        print('%s loaded ...%s bytes' % (url, len(content)))
         return content
 
     def _is_robot_txt(self, url):
@@ -52,7 +57,7 @@ class Crawler:
         database.update_person_page_rank(page_id, ranks)
         database.update_last_scan_date(page_id)
 
-    def scan_urls(self, pages, max_limit=0):
+    def scan_urls(self, pages):
         """
             pages - список tuple(page_id, url, site_id, base_url)
             max_limit - ограничитель добавленных ссылок пока тестов,
@@ -64,7 +69,7 @@ class Crawler:
         for row in pages:
             page_id, url, site_id, base_url = row
             request_time = time.time()
-            logging.info('#BEGIN url %s, base_url %s', url, base_url)
+            logging.info('#BEGIN %s url %s, base_url %s' % (page_id, url, base_url))
             urls = []
             content = ""
             page_type = None
@@ -76,10 +81,9 @@ class Crawler:
                 #logging.info('find_maps: %s', sitemaps)
             else:
                 content = self._get_content(url)
+                ranks = self.proccess_ranks(content, page_id)
+                database.update_person_page_rank(page_id, ranks)
                 page_type, urls = sitemap.get_urls(content, base_url)
-          
-            if page_type != sitemap.SM_TYPE_HTML:
-                database.update_last_scan_date(page_id)
 
             new_pages_data = [{
                 'site_id': site_id,
@@ -91,17 +95,23 @@ class Crawler:
             urls_count = database.add_urls(new_pages_data)
             add_urls_count = add_urls_count + (urls_count if urls_count > 0 else 0)
             request_time = time.time() - request_time
-            
+
+            if page_type != sitemap.SM_TYPE_HTML:
+                database.update_last_scan_date(page_id)
+
+
             logging.info('#END url %s, base_url %s, add urls %s, time %s',
                         url, base_url, urls_count, request_time)
-            if max_limit > 0 and add_urls_count >= max_limit:
+            if self.max_limit > 0 and add_urls_count >= self.max_limit:
                 break
         return add_urls_count
 
     def scan(self):
         database.add_robots()
         pages = database.get_pages_rows(None)
+        print('Crawler.scan: pages=%s' % len(pages))
         rows = self.scan_urls(pages)
+        # rows = self.scan_urls(pages)
         logging.info('Add %s new urls on date %s', rows, 'NULL')
 
     def fresh(self):

@@ -38,13 +38,14 @@ def _split_text(page_text, min_len):
     """
     return [word.lower() for word in re.split(r'\W+', page_text) if len(word) > min_len]
 
+
 def parse_html(page_content, words_dict):
     """
         page_content - контент страницы
         words_dict - {"person_id":[words_list]}
         возвращает словарь {"person_id": "rank"}
     """
-    min_len = 3 # минимальная длина слова которе считается словом 
+    min_len = 3 # минимальная длина слова которе считается словом
     result = {}
     logging.info('parse_html: %s', words_dict)
     try:

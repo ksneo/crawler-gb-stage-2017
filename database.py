@@ -25,14 +25,15 @@ def add_robots(db=settings.DB):
     new_sites = _not_have_pages()
     # ARGS = [(r[1], '%s/robots.txt' % r[0], None, datetime.datetime.now(), hashlib.md5(('%s/robots.txt' % r[0]).encode()).hexdigest()) for r in new_sites]
     ARGS = [{
-            'site_id': r[1], 
-            'url': '%s/robots.txt' % r[0], 
-            'found_date_time': datetime.datetime.now(), 
+            'site_id': r[1],
+            'url': '%s/robots.txt' % r[0],
+            'found_date_time': datetime.datetime.now(),
             'last_scan_date': None } for r in new_sites]
     add_robots = add_urls(ARGS)
-    
+
     logging.info('add_robots: %s robots url was add', add_robots)
     return add_robots
+
 
 def _not_have_pages(db=settings.DB):
     """ Возвращает rows([site_name, site_id]) у которых нет страниц"""
@@ -49,6 +50,7 @@ def _not_have_pages(db=settings.DB):
 
 def update_person_page_rank(page_id, ranks, db=settings.DB):
     if ranks:
+        print('update_person_page_rank', page_id, ranks)
         # db = settings.DB
         SELECT = 'select id from person_page_rank where PageID=%s and PersonID=%s'
         UPDATE = 'update person_page_rank set Rank=%s where ID=%s'
@@ -111,7 +113,7 @@ def add_urls(pages_data, db=settings.DB):
     # INSERT = ('INSERT INTO pages (SiteID, Url, FoundDateTime, LastScanDate) '
     #         'SELECT * FROM (SELECT %s, %s, %s, %s) AS tmp '
     #         'WHERE NOT EXISTS (SELECT Url FROM pages WHERE Url = %s ) LIMIT 1')
-   
+
     INSERT = ('INSERT INTO pages (SiteID, Url, FoundDateTime, LastScanDate, hash_url) '
               'VALUES (%(site_id)s, %(url)s, %(found_date_time)s, %(last_scan_date)s, MD5(%(url)s))')
 
@@ -124,10 +126,15 @@ def add_urls(pages_data, db=settings.DB):
             row = c.rowcount
             rows = rows + (row if row > 0 else 0)
             db.commit()
+            # print('_add_urls', (page, ))
+            print('+', end='', flush=True)
         except Exception as e:
-            logging.error('add_urls exception %s', e)
+            # logging.error('add_urls exception %s', e)
+            # print('add_urls exception %s', e)
+            print('.', end='', flush=True)
             db.rollback()
-    
+
     c.close()
+    print('\n_add_urls %s completed...' % rows)
     return rows
 
