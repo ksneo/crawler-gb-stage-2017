@@ -16,9 +16,11 @@ from robots import RobotsTxt
 
 
 class Crawler:
-    def __init__(self, next_step=False):
+    def __init__(self, next_step=False, max_limit=0):
         """ п.1 в «Алгоритме ...» """
+        self.max_limit = max_limit
         self.keywords = database.load_persons()
+
 
         if next_step:
             print('Crawler: переходим к шагу 2 ...')
@@ -51,7 +53,7 @@ class Crawler:
         ranks = parsers.parse_html(content, self.keywords)
         database.update_last_scan_date(page_id)
 
-    def scan_urls(self, pages, max_limit=0):
+    def scan_urls(self, pages):
         """
             pages - список tuple(page_id, url, site_id, base_url)
             max_limit - ограничитель добавленных ссылок пока тестов,
@@ -93,7 +95,7 @@ class Crawler:
 
             logging.info('#END url %s, base_url %s, add urls %s, time %s',
                         url, base_url, urls_count, request_time)
-            if max_limit > 0 and add_urls_count >= max_limit:
+            if self.max_limit > 0 and add_urls_count >= self.max_limit:
                 break
         return add_urls_count
 
