@@ -81,9 +81,11 @@ class Crawler:
                 #logging.info('find_maps: %s', sitemaps)
             else:
                 content = self._get_content(url)
-                ranks = self.proccess_ranks(content, page_id)
-                database.update_person_page_rank(page_id, ranks)
                 page_type, urls = sitemap.get_urls(content, base_url)
+                if page_type == sitemap.SM_TYPE_HTML:
+                    print('scan_url', content[:100])
+                    ranks = self.process_ranks(content, page_id)
+                    database.update_person_page_rank(page_id, ranks)
 
             new_pages_data = [{
                 'site_id': site_id,
