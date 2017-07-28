@@ -46,11 +46,12 @@ def parse_html(page_content, words_dict):
     """
     min_len = 3 # минимальная длина слова которе считается словом 
     result = {}
+    logging.info('parse_html: %s', words_dict)
     try:
         html_text = _extract_text(page_content)
         words_list = _split_text(html_text, min_len)
         result = _count_words(words_list, words_dict)
     except Exception as ex:
-        logging.error("parsers.parse_html: error %s", ex)
+        logging.error('parsers.parse_html: error %s', ex)
 
     return result

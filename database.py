@@ -12,8 +12,9 @@ def load_persons(db=settings.DB):
     for n, i in c.fetchall():
         if not i in keywords.keys():
             keywords[i] = []
-        keywords[i] += [n, ]
+        keywords[i] += [n.lower(), ]
     c.close()
+    logging.info("load_persons: %s", keywords)
     return keywords
 
 

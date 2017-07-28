@@ -45,9 +45,11 @@ class Crawler:
     def _is_robot_txt(self, url):
         return url.upper().endswith('ROBOTS.TXT')
 
-
-    def proccess_ranks(content, page_id):
+    def process_ranks(self, content, page_id):
+        logging.info('process_ranks: %s', content)
         ranks = parsers.parse_html(content, self.keywords)
+        logging.info('process_ranks: %s', ranks)
+        database.update_person_page_rank(page_id, ranks)
         database.update_last_scan_date(page_id)
 
     def scan_urls(self, pages, max_limit=0):
@@ -66,7 +68,7 @@ class Crawler:
             urls = []
             content = ""
             page_type = None
-            
+
             if self._is_robot_txt(url):
                 robots_file = RobotsTxt(url)
                 robots_file.read()
@@ -75,7 +77,7 @@ class Crawler:
             else:
                 content = self._get_content(url)
                 page_type, urls = sitemap.get_urls(content, base_url)
-            
+          
             if page_type != sitemap.SM_TYPE_HTML:
                 database.update_last_scan_date(page_id)
 
