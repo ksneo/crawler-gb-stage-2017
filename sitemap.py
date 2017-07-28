@@ -96,12 +96,12 @@ def _normalize_url(url, base_url):
         netloc = bs_url.netloc
     return ParseResult(scheme, netloc, path, params, query, fragment).geturl()
 
-@log_with
+#@log_with
 def get_urls(sitemap, base_url):
     """ 
         sitemap - содержимое сайтмэпа str, 
         base_url - адрес сайта с протоколом http://example.com
-        возвращает tuple c двумя списками 
+        возвращает tuple c типом контента и списком ссылок
     """
     urls_list = []
     sitemap_list = []
@@ -118,4 +118,4 @@ def get_urls(sitemap, base_url):
     except Exception as ex:
         logging.error("sitemap.get_urls: site %s, error %s", base_url, ex)
 
-    return (urls_list, sitemap_list)
+    return (sitemap_type, urls_list + sitemap_list)

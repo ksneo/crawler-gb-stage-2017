@@ -18,10 +18,8 @@ from robots import RobotsTxt
 class Crawler:
     def __init__(self, next_step=False):
         """ п.1 в «Алгоритме ...» """
-        # self.db = db
-        database._add_robots()
-
         self.keywords = database.load_persons()
+
         if next_step:
             print('Crawler: переходим к шагу 2 ...')
             scan_result = self.scan()
@@ -49,33 +47,50 @@ class Crawler:
     def _is_robot_txt(self, url):
         return url.upper().endswith('ROBOTS.TXT')
 
+    def proccess_ranks(content, page_id):
+        ranks = parsers.parse_html(content, self.keywords)
+        database.update_last_scan_date(page_id)
+
     def scan_urls(self, pages, max_limit=0):
+        """
+            pages - список tuple(page_id, url, site_id, base_url)
+            max_limit - ограничитель добавленных ссылок пока тестов,
+            так как кол-во ссылок в одном файле может достигать 50000
+            Добавляет в таблицу pages данные о найденных ссылках и
+            возвращает кол-во добавленных ссылок
+        """
         add_urls_count = 0
         for row in pages:
             page_id, url, site_id, base_url = row
             request_time = time.time()
             logging.info('#BEGIN %s url %s, base_url %s' % (page_id, url, base_url))
             urls = []
-            sitemaps = []
             content = ""
+            page_type = None
 
             if self._is_robot_txt(url):
                 robots_file = RobotsTxt(url)
                 robots_file.read()
-                sitemaps = robots_file.sitemaps
+                urls = robots_file.sitemaps
                 #logging.info('find_maps: %s', sitemaps)
             else:
                 content = self._get_content(url)
-                urls, sitemaps = sitemap.get_urls(content, base_url)
-                ranks = parsers.parse_html(content, self.keywords)
-                print(url, ranks)
+                page_type, urls = sitemap.get_urls(content, base_url)
 
-            urls += sitemaps
-            pages_data = [(site_id, u, datetime.datetime.now(), None) for u in urls if url]
-            urls_count = database._add_urls(pages_data)
+            if page_type != sitemap.SM_TYPE_HTML:
+                database.update_last_scan_date(page_id)
+
+            new_pages_data = [{
+                'site_id': site_id,
+                'url': u,
+                'found_date_time': datetime.datetime.now(),
+                'last_scan_date': None
+                } for u in urls if url]
+
+            urls_count = database.add_urls(new_pages_data)
             add_urls_count = add_urls_count + (urls_count if urls_count > 0 else 0)
             request_time = time.time() - request_time
-            database.update_last_scan_date(page_id)
+
             logging.info('#END url %s, base_url %s, add urls %s, time %s',
                         url, base_url, urls_count, request_time)
             if max_limit > 0 and add_urls_count >= max_limit:
@@ -83,9 +98,11 @@ class Crawler:
         return add_urls_count
 
     def scan(self):
-        pages = database._get_pages_rows(None)
+        database.add_robots()
+        pages = database.get_pages_rows(None)
         print('Crawler.scan: pages=%s' % len(pages))
         rows = self.scan_urls(pages, 10)
+        # rows = self.scan_urls(pages)
         logging.info('Add %s new urls on date %s', rows, 'NULL')
 
     def fresh(self):

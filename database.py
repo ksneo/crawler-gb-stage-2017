@@ -1,6 +1,5 @@
 import datetime
 import logging
-import hashlib
 import settings
 
 
@@ -18,27 +17,21 @@ def load_persons(db=settings.DB):
     return keywords
 
 
-def _add_robots(db=settings.DB):
+def add_robots(db=settings.DB):
     """ Добавляет в pages ссылки на robots.txt, если их нет для определенных сайтов """
     # db = settings.DB
     # INSERT = 'insert into pages(SiteID, Url, FoundDateTime, LastScanDate) values (%s, %s, %s, %s)'
     new_sites = _not_have_pages()
     # ARGS = [(r[1], '%s/robots.txt' % r[0], None, datetime.datetime.now(), hashlib.md5(('%s/robots.txt' % r[0]).encode()).hexdigest()) for r in new_sites]
-    ARGS = [(r[1], '%s/robots.txt' % r[0], datetime.datetime.now(), None,) for r in new_sites]
-    _add_urls(ARGS)
-    """
-    c = db.cursor()
-    try:
-        c.executemany(INSERT, ARGS)
-        db.commit()
-    except Exception as ex:
-        db.rollback()
-        logging.error('_add_robots: ARGS %s, exception %s', ARGS, ex)
-    add_robots = c.rowcount
-    c.close()
-    logging.info('_add_robots: %s robots url was add', add_robots)
+    ARGS = [{
+            'site_id': r[1], 
+            'url': '%s/robots.txt' % r[0], 
+            'found_date_time': datetime.datetime.now(), 
+            'last_scan_date': None } for r in new_sites]
+    add_robots = add_urls(ARGS)
+    
+    logging.info('add_robots: %s robots url was add', add_robots)
     return add_robots
-    """
 
 def _not_have_pages(db=settings.DB):
     """ Возвращает rows([site_name, site_id]) у которых нет страниц"""
@@ -85,7 +78,7 @@ def update_last_scan_date(page_id, db=settings.DB):
     print('update_last_scan_date %s complete...' % page_id)
 
 
-def _get_pages_rows(last_scan_date, db=settings.DB):
+def get_pages_rows(last_scan_date, db=settings.DB):
     # db = settings.DB
     SELECT = ('select p.id, p.Url, p.SiteID, s.Name '
                 'from pages p '
@@ -105,26 +98,26 @@ def _get_pages_rows(last_scan_date, db=settings.DB):
     return pages
 
 
-def _add_urls(pages_data, db=settings.DB):
-    # db = settings.DB
+def add_urls(pages_data, db=settings.DB):
     """
-        pages_data - tuple(siteid, url, founddatatime, lastscandate)
+        pages_data - dict(site_id, url, found_date_time, last_scan_date)
         добавляет url в таблицу pages если такой ссылки нет
-        решение взято отсюда
-        https://stackoverflow.com/questions/3164505/mysql-insert-record-if-not-exists-in-table
     """
-    logging.info('Crawler._add_urls inserting %s', len(pages_data))
+    logging.info('add_urls inserting %s', len(pages_data))
 
+    # медленный вариант, но работает без добавления дополнительного поля
+    # отчасти был медленным из-за настройки mysql сервера, но и так разница в 3 раза
     # INSERT = ('INSERT INTO pages (SiteID, Url, FoundDateTime, LastScanDate) '
     #         'SELECT * FROM (SELECT %s, %s, %s, %s) AS tmp '
     #         'WHERE NOT EXISTS (SELECT Url FROM pages WHERE Url = %s ) LIMIT 1')
-    INSERT = 'insert into pages (SiteID, Url, FoundDateTime, LastScanDate) '\
-             'values (%s, %s, %s, %s)'
+   
+    INSERT = ('INSERT INTO pages (SiteID, Url, FoundDateTime, LastScanDate, hash_url) '
+              'VALUES (%(site_id)s, %(url)s, %(found_date_time)s, %(last_scan_date)s, MD5(%(url)s))')
+
     c = db.cursor()
-    #c.executemany(INSERT, pages_data)
     rows = 0
+
     for page in pages_data:
-        # page += (hashlib.md5(page[1].encode()).hexdigest(),)
         try:
             c.execute(INSERT, page)
             row = c.rowcount
@@ -132,9 +125,13 @@ def _add_urls(pages_data, db=settings.DB):
             db.commit()
             print('_add_urls', (page, ))
         except Exception as e:
-            print('_add_urls exception ', e)
+            logging.error('add_urls exception %s', e)
             db.rollback()
+    
     c.close()
+<<<<<<< HEAD
     print('_add_urls %s completed...' % rows)
+=======
+>>>>>>> 29b20014962c5d344bc503445e088c52147031ce
     return rows
 
