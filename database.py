@@ -110,7 +110,7 @@ def add_urls(pages_data, db=settings.DB):
     # INSERT = ('INSERT INTO pages (SiteID, Url, FoundDateTime, LastScanDate) '
     #         'SELECT * FROM (SELECT %s, %s, %s, %s) AS tmp '
     #         'WHERE NOT EXISTS (SELECT Url FROM pages WHERE Url = %s ) LIMIT 1')
-   
+
     INSERT = ('INSERT INTO pages (SiteID, Url, FoundDateTime, LastScanDate, hash_url) '
               'VALUES (%(site_id)s, %(url)s, %(found_date_time)s, %(last_scan_date)s, MD5(%(url)s))')
 
@@ -127,7 +127,7 @@ def add_urls(pages_data, db=settings.DB):
         except Exception as e:
             logging.error('add_urls exception %s', e)
             db.rollback()
-    
+
     c.close()
     print('_add_urls %s completed...' % rows)
     return rows
