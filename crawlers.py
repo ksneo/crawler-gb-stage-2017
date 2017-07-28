@@ -50,9 +50,10 @@ class Crawler:
     def _is_robot_txt(self, url):
         return url.upper().endswith('ROBOTS.TXT')
 
-    def proccess_ranks(content, page_id):
+    def proccess_ranks(self, content, page_id):
         ranks = parsers.parse_html(content, self.keywords)
-        database.update_last_scan_date(page_id)
+        # database.update_last_scan_date(page_id)
+        return ranks
 
     def scan_urls(self, pages):
         """
@@ -78,6 +79,8 @@ class Crawler:
                 #logging.info('find_maps: %s', sitemaps)
             else:
                 content = self._get_content(url)
+                ranks = self.proccess_ranks(content, page_id)
+                database.update_person_page_rank(page_id, ranks)
                 page_type, urls = sitemap.get_urls(content, base_url)
 
             new_pages_data = [{

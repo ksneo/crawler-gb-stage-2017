@@ -49,6 +49,7 @@ def _not_have_pages(db=settings.DB):
 
 def update_person_page_rank(page_id, ranks, db=settings.DB):
     if ranks:
+        print('update_person_page_rank', page_id, ranks)
         # db = settings.DB
         SELECT = 'select id from person_page_rank where PageID=%s and PersonID=%s'
         UPDATE = 'update person_page_rank set Rank=%s where ID=%s'
