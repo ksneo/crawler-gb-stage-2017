@@ -34,7 +34,7 @@ def _get_nsless_xml(xml):
     return it.root
 
 
-def _get_sitemap_type(sitemap):
+def get_file_type(sitemap):
     xml_pattern = "<urlset"
     html_pattern = "<!DOCTYPE"
     rec_pattern = "<sitemapindex"
@@ -105,7 +105,7 @@ def get_urls(sitemap, base_url):
     """
     urls_list = []
     sitemap_list = []
-    sitemap_type = _get_sitemap_type(sitemap)
+    sitemap_type = get_file_type(sitemap)
     try:
         if sitemap_type == SM_TYPE_XML:
             urls_list = _parse_xml(sitemap, 'url/loc')

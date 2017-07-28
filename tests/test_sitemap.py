@@ -31,13 +31,13 @@ def describe_sitemap_module():
 
     def describe__get_sitemap_type():
         def it_return_type_of_sitemap_xml(xml_sitemap):
-            assert tm._get_sitemap_type(xml_sitemap) == tm.SM_TYPE_XML
+            assert tm.get_file_type(xml_sitemap) == tm.SM_TYPE_XML
         
         def it_return_type_of_sitemap_html(html_sitemap):
-            assert tm._get_sitemap_type(html_sitemap) == tm.SM_TYPE_HTML
+            assert tm.get_file_type(html_sitemap) == tm.SM_TYPE_HTML
 
         def it_return_type_of_sitemap_txt(txt_sitemap):
-            assert tm._get_sitemap_type(txt_sitemap) == tm.SM_TYPE_TXT
+            assert tm.get_file_type(txt_sitemap) == tm.SM_TYPE_TXT
 
     def describe_get_urls():
         def it_return_tuple_of_urls_xml(xml_sitemap, site_url, urls_list):

@@ -5,6 +5,7 @@ import logging
 from lxml import etree
 from collections import Counter
 from log import log_with
+from sitemap import get_file_type, SM_TYPE_HTML
 
 def _count_words(words_list, words_dict):
     """
@@ -45,6 +46,9 @@ def parse_html(page_content, words_dict):
         words_dict - {"person_id":[words_list]}
         возвращает словарь {"person_id": "rank"}
     """
+    if get_file_type(page_content) != SM_TYPE_HTML:
+        return {}
+
     min_len = 3 # минимальная длина слова которе считается словом
     result = {}
     logging.info('parse_html: %s', words_dict)
