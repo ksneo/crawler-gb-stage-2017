@@ -123,12 +123,14 @@ def add_urls(pages_data, db=settings.DB):
             row = c.rowcount
             rows = rows + (row if row > 0 else 0)
             db.commit()
-            print('_add_urls', (page, ))
+            # print('_add_urls', (page, ))
+            print('+', end='', flush=True)
         except Exception as e:
-            logging.error('add_urls exception %s', e)
+            # logging.error('add_urls exception %s', e)
+            print('.', end='', flush=True)
             db.rollback()
 
     c.close()
-    print('_add_urls %s completed...' % rows)
+    print('\n_add_urls %s completed...' % rows)
     return rows
 
