@@ -1,6 +1,8 @@
 import pytest
 import settings
 import logging
+import database
+import MySQLdb
 
 def executeScriptsFromFile(filename, db):
     # Open and read the file as a single buffer
@@ -25,10 +27,12 @@ def executeScriptsFromFile(filename, db):
 
 @pytest.fixture
 def test_db():
-    return settings.DB
+    database.db = MySQLdb.connect(**settings.TEST_DATABASE)
+    return database.db
 
 def clean_test_db():
-    db = settings.DB
+    database.db = MySQLdb.connect(**settings.TEST_DATABASE)
+    db = database.db
     executeScriptsFromFile("./sql/db_init_mysql.sql", db)
     executeScriptsFromFile("./sql/db_load_sites.sql", db)
     executeScriptsFromFile("./sql/db_load_persons.sql", db)

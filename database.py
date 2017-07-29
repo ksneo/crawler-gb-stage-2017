@@ -1,9 +1,13 @@
 import datetime
 import logging
 import settings
+import MySQLdb
 
 
-def load_persons(db=settings.DB):
+db = MySQLdb.connect(**settings.DATABASE)
+
+
+def load_persons():
     # db = settings.DB
     c = db.cursor()
     SELECT = 'select distinct Name, PersonID from keywords'
@@ -17,7 +21,7 @@ def load_persons(db=settings.DB):
     logging.info("load_persons: %s", keywords)
     return keywords
 
-def get_robots(db=settings.DB):
+def get_robots():
     SELECT = ('SELECT p.ID, p.Url, p.SiteID, s.Name FROM pages p ' 
               'JOIN sites s ON (s.ID=p.SiteID) ' 
               'WHERE RIGHT(p.Url, 10) = "robots.txt"')
@@ -28,7 +32,7 @@ def get_robots(db=settings.DB):
     c.close()
     return rows
 
-def add_robots(db=settings.DB):
+def add_robots():
     """ Добавляет в pages ссылки на robots.txt, если их нет для определенных сайтов  """
     # db = settings.DB
     # INSERT = 'insert into pages(SiteID, Url, FoundDateTime, LastScanDate) values (%s, %s, %s, %s)'
@@ -45,7 +49,7 @@ def add_robots(db=settings.DB):
     return add_robots
 
 
-def _not_have_pages(db=settings.DB):
+def _not_have_pages():
     """ Возвращает rows([site_name, site_id]) у которых нет страниц"""
     # db = settings.DB
     c = db.cursor()
@@ -58,7 +62,7 @@ def _not_have_pages(db=settings.DB):
     return rows
 
 
-def update_person_page_rank(page_id, ranks, db=settings.DB):
+def update_person_page_rank(page_id, ranks):
     if ranks:
         print('update_person_page_rank', page_id, ranks)
         # db = settings.DB
@@ -77,11 +81,14 @@ def update_person_page_rank(page_id, ranks, db=settings.DB):
                     c.execute(UPDATE, (rank, rank_id))
                 else:
                     c.execute(INSERT, (page_id, person_id, rank))
-                db.commit()
+                    logging.info('update_person_page_rank: insert affected rows %s', c.rowcount)
+                    logging.info('update_person_page_rank: insert page_id = %s, person_id = %s, rank = %s', page_id, person_id, rank)
                 c.close()
+        db.commit()
+                
 
 
-def update_last_scan_date(page_id, db=settings.DB):
+def update_last_scan_date(page_id):
     print('update_last_scan_date %s' % page_id)
     # db = settings.DB
     c = db.cursor()
@@ -92,7 +99,7 @@ def update_last_scan_date(page_id, db=settings.DB):
     print('update_last_scan_date %s complete...' % page_id)
 
 
-def get_pages_rows(last_scan_date, db=settings.DB):
+def get_pages_rows(last_scan_date):
     # db = settings.DB
     SELECT = ('select p.id, p.Url, p.SiteID, s.Name '
                 'from pages p '
@@ -112,7 +119,7 @@ def get_pages_rows(last_scan_date, db=settings.DB):
     return pages
 
 
-def add_urls(pages_data, db=settings.DB):
+def add_urls(pages_data):
     """
         pages_data - dict(site_id, url, found_date_time, last_scan_date)
         добавляет url в таблицу pages если такой ссылки нет

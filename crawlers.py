@@ -116,4 +116,3 @@ if __name__ == '__main__':
     db = settings.DB
     c = Crawler(db)
     c.scan()
-    c.fresh()
