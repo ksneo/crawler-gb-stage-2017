@@ -100,7 +100,7 @@ class Crawler:
                 add_urls_count = 0
             else:
                 page_type, add_urls_count = sitemap.scan_urls(content, page, robots)
-            
+
             if page_type == sitemap.SM_TYPE_HTML:
                 self.process_ranks(content, page_id)
 
