@@ -17,9 +17,19 @@ def load_persons(db=settings.DB):
     logging.info("load_persons: %s", keywords)
     return keywords
 
+def get_robots(db=settings.DB):
+    SELECT = ('SELECT p.ID, p.Url, p.SiteID, s.Name FROM pages p ' 
+              'JOIN sites s ON (s.ID=p.SiteID) ' 
+              'WHERE RIGHT(p.Url, 10) = "robots.txt"')
+    c = db.cursor()
+    c.execute(SELECT)
+    rows = c.fetchall()
+    logging.info('get_robots: %s', rows)
+    c.close()
+    return rows
 
 def add_robots(db=settings.DB):
-    """ Добавляет в pages ссылки на robots.txt, если их нет для определенных сайтов """
+    """ Добавляет в pages ссылки на robots.txt, если их нет для определенных сайтов  """
     # db = settings.DB
     # INSERT = 'insert into pages(SiteID, Url, FoundDateTime, LastScanDate) values (%s, %s, %s, %s)'
     new_sites = _not_have_pages()
@@ -55,7 +65,7 @@ def update_person_page_rank(page_id, ranks, db=settings.DB):
         SELECT = 'select id from person_page_rank where PageID=%s and PersonID=%s'
         UPDATE = 'update person_page_rank set Rank=%s where ID=%s'
         INSERT = 'insert into person_page_rank (PageID, PersonID, Rank) values (%s, %s, %s)'
-        for person_id, rank in ranks.items() if rank > 0:
+        for person_id, rank in ranks.items():
             # Реализация INSERT OR UPDATE, т.к. кое кто отказался добавить UNIQUE_KEY :)
             c = db.cursor()
             c.execute(SELECT, (page_id, person_id))
@@ -135,6 +145,6 @@ def add_urls(pages_data, db=settings.DB):
             db.rollback()
 
     c.close()
-    print('\n_add_urls %s completed...' % rows)
+    # print('\n_add_urls %s completed...' % rows)
     return rows
 
