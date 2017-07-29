@@ -100,11 +100,11 @@ class Crawler:
                 add_urls_count = 0
             else:
                 page_type, add_urls_count = sitemap.scan_urls(content, page, robots)
-            request_time = time.time() - request_time
-
+            
             if page_type == sitemap.SM_TYPE_HTML:
                 self.process_ranks(content, page_id)
 
+            request_time = time.time() - request_time
             logging.info('#END url %s, base_url %s, add urls %s, time %s',
                          url, base_url, add_urls_count, request_time)
             add_urls_total = add_urls_total + add_urls_count
