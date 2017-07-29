@@ -41,19 +41,19 @@ def describe_sitemap_module():
 
     def describe_get_urls():
         def it_return_tuple_of_urls_xml(xml_sitemap, site_url, urls_list):
-            assert tm.get_urls(xml_sitemap, site_url) == (tm.SM_TYPE_XML, urls_list)
+            assert tm._get_urls(xml_sitemap, site_url, tm.get_file_type(xml_sitemap)) == (urls_list)
         
         def it_return_tuple_of_urls_html(html_sitemap, site_url, urls_list):
-            assert tm.get_urls(html_sitemap, site_url) == (tm.SM_TYPE_HTML, urls_list)
+            assert tm._get_urls(html_sitemap, site_url, tm.get_file_type(html_sitemap)) == (urls_list)
 
         def it_return_tuple_of_urls_txt(txt_sitemap, site_url, urls_list):
-            assert tm.get_urls(txt_sitemap, site_url) == (tm.SM_TYPE_TXT, urls_list)
+            assert tm._get_urls(txt_sitemap, site_url, tm.get_file_type(txt_sitemap)) == (urls_list)
 
         def it_return_tuple_of_urls_rec(rec_sitemap, site_url, rec_list):
-            assert tm.get_urls(rec_sitemap, site_url) == (tm.SM_TYPE_REC, rec_list)
+            assert tm._get_urls(rec_sitemap, site_url, tm.get_file_type(rec_sitemap)) == (rec_list)
 
         def it_logging_warning_if_broken_file(xml_sitemap_bad, site_url, caplog):
-            res = tm.get_urls(xml_sitemap_bad, site_url)
+            res = tm._get_urls(xml_sitemap_bad, site_url, tm.get_file_type(xml_sitemap_bad))
             print('caplog.text()', caplog.text())
             assert 'sitemap.get_urls' in caplog.text()
-            assert res == (tm.SM_TYPE_XML, [])
+            assert res == ([])

@@ -33,4 +33,5 @@ def clean_test_db():
     executeScriptsFromFile("./sql/db_load_sites.sql", db)
     executeScriptsFromFile("./sql/db_load_persons.sql", db)
     executeScriptsFromFile("./sql/db_load_keywords.sql", db)
+    executeScriptsFromFile("./sql/db_load_pages.sql", db)
     return db
