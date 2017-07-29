@@ -4,7 +4,10 @@ from lxml import etree
 import io
 import re
 import logging
+import datetime
+import time
 from log import log_with
+import database as db
 
 
 SM_TYPE_XML = 0
@@ -48,6 +51,7 @@ def get_file_type(sitemap):
     else:
         return SM_TYPE_TXT
 
+
 def _select_items(xml_elem, xpath):
     """ xml_elem ETreeElement, xpath - путь поиска, возвращает список урлов в элементе """
     items = [x.text.strip() for x in xml_elem.xpath(xpath)]
@@ -77,6 +81,7 @@ def _parse_html(content):
     xpath = './/a/@href'
     return _select_attrs(html_root, xpath)
 
+
 def _parse_xml(content, xpath):
     """
         content - содержимое sitemap в текстовом xml
@@ -96,26 +101,59 @@ def _normalize_url(url, base_url):
         netloc = bs_url.netloc
     return ParseResult(scheme, netloc, path, params, query, fragment).geturl()
 
-#@log_with
-def get_urls(sitemap, base_url):
-    """ 
-        sitemap - содержимое сайтмэпа str, 
-        base_url - адрес сайта с протоколом http://example.com
-        возвращает tuple c типом контента и списком ссылок
-    """
+
+def _get_urls(content, base_url, sitemap_type):
     urls_list = []
-    sitemap_list = []
-    sitemap_type = get_file_type(sitemap)
     try:
         if sitemap_type == SM_TYPE_XML:
-            urls_list = _parse_xml(sitemap, 'url/loc')
+            urls_list = _parse_xml(content, 'url/loc')
         elif sitemap_type == SM_TYPE_HTML:
-            urls_list = [_normalize_url(url, base_url) for url in _parse_html(sitemap)]
+            urls_list = [_normalize_url(url, base_url) for url in _parse_html(content)]
         elif sitemap_type == SM_TYPE_TXT:
-            urls_list = _parse_txt(sitemap)
+            urls_list = _parse_txt(content)
         elif sitemap_type == SM_TYPE_REC:
-            sitemap_list = _parse_xml(sitemap, 'sitemap/loc')
+            urls_list = _parse_xml(content, 'sitemap/loc')
     except Exception as ex:
         logging.error("sitemap.get_urls: site %s, error %s", base_url, ex)
+    return urls_list
 
-    return (sitemap_type, urls_list + sitemap_list)
+
+def _filter_robots(urls, robots):
+    # TODO: реализовать фильтр по robots.txt
+    return urls
+
+
+#@log_with
+def scan_urls(content, page, robots):
+    """
+        content - содержимое сайтмэпа или html str,
+        page - tuple с инфой о странице page_id, url, site_id, base_url
+        robots - класс с парсером robots.txt
+        возвращает tuple c типом контента и списком ссылок
+    """
+    request_time = time.time()
+    page_id, page_url, site_id, base_url = page
+    logging.info('#BEGIN %s url %s, base_url %s', page_id, page_url, base_url)
+    page_type = get_file_type(content)
+    urls = _get_urls(content, base_url, page_type)
+
+    # удаляем пустые
+    urls = [url for url in urls if url]
+
+    # TODO: фильтрацию по домену
+    urls = _filter_robots(urls, robots)
+
+    new_pages_data = [{
+        'site_id': site_id,
+        'url': url,
+        'found_date_time': datetime.datetime.now(),
+        'last_scan_date': None
+        } for url in urls]
+
+    urls_count = db.add_urls(new_pages_data)
+    if page_type != SM_TYPE_HTML:
+        db.update_last_scan_date(page_id)
+    request_time = time.time() - request_time
+    logging.info('#END url %s, base_url %s, add urls %s, time %s',
+                 page_url, base_url, urls_count, request_time)
+    return (page_type, urls_count)
