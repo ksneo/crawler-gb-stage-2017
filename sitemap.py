@@ -4,8 +4,6 @@ from lxml import etree
 import io
 import re
 import logging
-import datetime
-import time
 from log import log_with
 import database as db
 
@@ -120,8 +118,22 @@ def _get_urls(content, base_url, sitemap_type):
 
 def _filter_robots(urls, robots):
     # TODO: реализовать фильтр по robots.txt
+    if robots is None:
+        return urls
     return urls
 
+def add_urls(urls, page, page_type):
+    page_id, page_url, site_id, base_url = page
+    new_pages_data = [{
+        'site_id': site_id,
+        'url': url,
+        'found_date_time': datetime.datetime.now(),
+        'last_scan_date': None
+        } for url in urls]
+    urls_count = db.add_urls(new_pages_data)
+    if page_type != SM_TYPE_HTML:
+        db.update_last_scan_date(page_id)
+    return urls_count
 
 #@log_with
 def scan_urls(content, page, robots):
@@ -131,9 +143,7 @@ def scan_urls(content, page, robots):
         robots - класс с парсером robots.txt
         возвращает tuple c типом контента и списком ссылок
     """
-    request_time = time.time()
     page_id, page_url, site_id, base_url = page
-    logging.info('#BEGIN %s url %s, base_url %s', page_id, page_url, base_url)
     page_type = get_file_type(content)
     urls = _get_urls(content, base_url, page_type)
 
@@ -142,18 +152,5 @@ def scan_urls(content, page, robots):
 
     # TODO: фильтрацию по домену
     urls = _filter_robots(urls, robots)
-
-    new_pages_data = [{
-        'site_id': site_id,
-        'url': url,
-        'found_date_time': datetime.datetime.now(),
-        'last_scan_date': None
-        } for url in urls]
-
-    urls_count = db.add_urls(new_pages_data)
-    if page_type != SM_TYPE_HTML:
-        db.update_last_scan_date(page_id)
-    request_time = time.time() - request_time
-    logging.info('#END url %s, base_url %s, add urls %s, time %s',
-                 page_url, base_url, urls_count, request_time)
+    urls_count = add_urls(urls, page, page_type)
     return (page_type, urls_count)
