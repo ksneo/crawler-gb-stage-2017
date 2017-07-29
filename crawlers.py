@@ -110,7 +110,7 @@ class Crawler:
             add_urls_total = add_urls_total + add_urls_count
 
         logging.info('Crawler.scan: Add %s new urls on date %s', add_urls_total, 'NULL')
-
+        return add_urls_total, len(pages)
 
 if __name__ == '__main__':
     db = settings.DB
