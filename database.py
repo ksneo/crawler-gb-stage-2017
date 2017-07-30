@@ -12,14 +12,16 @@ def load_persons():
     c = db.cursor()
     SELECT = 'select distinct Name, PersonID from keywords'
     c.execute(SELECT)
+    logging.debug('load_persons: %s', c._last_executed)
     keywords = {}
     for n, i in c.fetchall():
         if not i in keywords.keys():
             keywords[i] = []
         keywords[i] += [n.lower(), ]
     c.close()
-    logging.info("load_persons: %s", keywords)
+    logging.debug("load_persons: %s", keywords)
     return keywords
+
 
 def get_robots():
     SELECT = ('SELECT p.ID, p.Url, p.SiteID, s.Name FROM pages p ' 
@@ -27,10 +29,12 @@ def get_robots():
               'WHERE RIGHT(p.Url, 10) = "robots.txt"')
     c = db.cursor()
     c.execute(SELECT)
+    logging.debug('get_robots: %s', c._last_executed)
     rows = c.fetchall()
     logging.info('get_robots: %s', rows)
     c.close()
     return rows
+
 
 def add_robots():
     """ Добавляет в pages ссылки на robots.txt, если их нет для определенных сайтов  """
@@ -51,7 +55,6 @@ def add_robots():
 
 def _not_have_pages():
     """ Возвращает rows([site_name, site_id]) у которых нет страниц"""
-    # db = settings.DB
     c = db.cursor()
     c.execute('select s.Name, s.ID '
                 'from sites s '
@@ -64,8 +67,7 @@ def _not_have_pages():
 
 def update_person_page_rank(page_id, ranks):
     if ranks:
-        print('update_person_page_rank', page_id, ranks)
-        # db = settings.DB
+        logging.debug('update_person_page_rank: %s %s', page_id, ranks)
         SELECT = 'select id from person_page_rank where PageID=%s and PersonID=%s'
         UPDATE = 'update person_page_rank set Rank=%s where ID=%s'
         INSERT = 'insert into person_page_rank (PageID, PersonID, Rank) values (%s, %s, %s)'
@@ -74,6 +76,7 @@ def update_person_page_rank(page_id, ranks):
                 # Реализация INSERT OR UPDATE, т.к. кое кто отказался добавить UNIQUE_KEY :)
                 c = db.cursor()
                 c.execute(SELECT, (page_id, person_id))
+                logging.debug('update_person_page_rank: %s', c._last_executed)
                 rank_id = c.fetchone()
                 c.close()
                 c = db.cursor()
@@ -81,29 +84,25 @@ def update_person_page_rank(page_id, ranks):
                     c.execute(UPDATE, (rank, rank_id))
                 else:
                     c.execute(INSERT, (page_id, person_id, rank))
-                    logging.info('update_person_page_rank: insert affected rows %s', c.rowcount)
-                    logging.info('update_person_page_rank: insert page_id = %s, person_id = %s, rank = %s', page_id, person_id, rank)
+                logging.debug('update_person_page_rank: %s', c._last_executed)
                 c.close()
         db.commit()
-                
 
 
 def update_last_scan_date(page_id):
-    print('update_last_scan_date %s' % page_id)
-    # db = settings.DB
     c = db.cursor()
     c.execute('update pages set LastScanDate=%s where ID=%s',
-                (datetime.datetime.now(), page_id))
+              (datetime.datetime.now(), page_id))
+    logging.debug('update_last_scan_date: %s', c._last_executed)
+
     db.commit()
     c.close()
-    print('update_last_scan_date %s complete...' % page_id)
-
 
 def get_pages_rows(last_scan_date):
     # db = settings.DB
     SELECT = ('select p.id, p.Url, p.SiteID, s.Name '
-                'from pages p '
-                'join sites s on (s.ID=p.SiteID)')
+              'from pages p '
+              'join sites s on (s.ID=p.SiteID)')
 
     if last_scan_date is None:
         WHERE = 'where p.LastScanDate is null'
@@ -114,6 +113,7 @@ def get_pages_rows(last_scan_date):
 
     with db.cursor() as c:
         c.execute(query, (last_scan_date))
+        logging.debug('get_pages_rows: %s', c._last_executed)
         pages = c.fetchall()
 
     return pages
@@ -133,7 +133,8 @@ def add_urls(pages_data):
     #         'WHERE NOT EXISTS (SELECT Url FROM pages WHERE Url = %s ) LIMIT 1')
 
     INSERT = ('INSERT INTO pages (SiteID, Url, FoundDateTime, LastScanDate, hash_url) '
-              'VALUES (%(site_id)s, %(url)s, %(found_date_time)s, %(last_scan_date)s, MD5(%(url)s))')
+              'VALUES (%(site_id)s, %(url)s, %(found_date_time)s, '
+              '%(last_scan_date)s, MD5(%(url)s))')
 
     c = db.cursor()
     rows = 0
@@ -141,18 +142,16 @@ def add_urls(pages_data):
     for page in pages_data:
         try:
             c.execute(INSERT, page)
+            logging.debug('database.add_urls: %s', c._last_executed)
             row = c.rowcount
             rows = rows + (row if row > 0 else 0)
             db.commit()
-            # print('_add_urls', (page, ))
-            print('+', end='', flush=True)
+            # print('+', end='', flush=True)
         except Exception as e:
-            # logging.error('add_urls exception %s', e)
-            # print('add_urls exception %s', e)
-            print('.', end='', flush=True)
+            logging.error('database.add_urls exception %s', e)
+            # print('.', end='', flush=True)
             db.rollback()
 
     c.close()
-    # print('\n_add_urls %s completed...' % rows)
+    logging.debug('database.add_urls %s completed...' % rows)
     return rows
-
