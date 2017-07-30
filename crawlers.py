@@ -28,12 +28,14 @@ class Crawler:
 
     def _get_content(self, url):
         # print('%s loading ...', url)
+        logging.info('%s loading ', url)
         try:
             rd = urllib.request.urlopen(url)
         except Exception as e:
             logging.error('_get_content (%s) exception %s', url, e)
             return ""
-
+        charset = rd.headers.get_content_charset('utf-8')
+        logging.debug("_get_content: charset %s", charset)
         content = ""
         if url.strip().endswith('.gz'):
             mem = BytesIO(rd.read())
@@ -41,7 +43,7 @@ class Crawler:
             f = gzip.GzipFile(fileobj=mem, mode='rb')
             content = f.read().decode()
         else:
-            content = rd.read().decode()
+            content = rd.read().decode(charset)
 
         print('%s loaded ...%s bytes' % (url, len(content)))
         return content
