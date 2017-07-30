@@ -50,9 +50,9 @@ class Crawler:
         return url.upper().endswith('ROBOTS.TXT')
 
     def process_ranks(self, content, page_id):
-        logging.info('process_ranks: %s', content)
+        logging.debug('process_ranks: %s', content)
         ranks = parsers.parse_html(content, self.keywords)
-        logging.info('process_ranks: %s', ranks)
+        logging.debug('process_ranks: %s', ranks)
         database.update_person_page_rank(page_id, ranks)
         database.update_last_scan_date(page_id)
         return ranks
@@ -113,6 +113,6 @@ class Crawler:
         return add_urls_total, len(pages)
 
 if __name__ == '__main__':
-    db = settings.DB
-    c = Crawler(db)
+    c = Crawler(max_limit=50000)
+    logger = logging.getLogger()
     c.scan()
