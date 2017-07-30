@@ -134,7 +134,8 @@ def add_urls(pages_data):
 
     INSERT = ('INSERT INTO pages (SiteID, Url, FoundDateTime, LastScanDate, hash_url) '
               'VALUES (%(site_id)s, %(url)s, %(found_date_time)s, '
-              '%(last_scan_date)s, MD5(%(url)s))')
+              '%(last_scan_date)s, MD5(%(url)s)) '
+              'ON DUPLICATE KEY UPDATE FoundDateTime=%(found_date_time)s')
 
     c = db.cursor()
     rows = 0
