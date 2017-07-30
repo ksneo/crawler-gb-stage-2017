@@ -16,3 +16,6 @@ TEST_DATABASE = {
     'use_unicode': True,
     'charset': 'utf8'
 }
+
+DEBUG = True
+LOG_FILE = 'crawler.log'
