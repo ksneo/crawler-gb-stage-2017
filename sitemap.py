@@ -123,6 +123,11 @@ def _filter_robots(urls, robots):
         return urls
     return urls
 
+
+def _filter_domain(urls, base_url):
+    return [url for url in urls if url.startswith(base_url)]
+
+
 def add_urls(urls, page, page_type):
     page_id, page_url, site_id, base_url = page
     new_pages_data = [{
@@ -150,8 +155,7 @@ def scan_urls(content, page, robots):
 
     # удаляем пустые
     urls = [url for url in urls if url]
-
-    # TODO: фильтрацию по домену
+    urls = _filter_domain(urls, base_url)
     urls = _filter_robots(urls, robots)
     urls_count = add_urls(urls, page, page_type)
     return (page_type, urls_count)

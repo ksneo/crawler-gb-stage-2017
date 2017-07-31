@@ -1,4 +1,5 @@
 import pytest
+import log
 from test_crawlers_fixtures import *
 from test_parsers_fixtures import *
 
@@ -7,6 +8,7 @@ from robots import RobotsTxt
 from database import get_pages_rows, add_robots
 
 def setup_module(module):
+    logger = log.logging.getLogger()
     clean_test_db()
 
 def describe_crawlers_module():
@@ -28,7 +30,7 @@ def describe_crawlers_module():
             result = crawler.scan()
             assert result[0] == 48
         
-        #@pytest.mark.skip(reason="very long operation 54s")
+        @pytest.mark.skip(reason="very long operation 54s")
         def it_method_scan_urls_return_add_urls_count_50000():
             crawler = Crawler(max_limit=50000)
             result = crawler.scan()
