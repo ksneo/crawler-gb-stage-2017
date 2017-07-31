@@ -37,7 +37,6 @@ def _extract_text(page_content):
     return html_text
 
 
-@log_with
 def _split_text(page_text, min_len):
     """
         функция разбивает текст на слова и возвращает список со словами длинне max_len
