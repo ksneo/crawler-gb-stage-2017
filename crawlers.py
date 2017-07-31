@@ -66,6 +66,7 @@ class Crawler:
             - создает объекты из файлов robots.txt, 
               которые умеют проверять ссылки и содежрат sitemaps
             - возвращает словарь site_id : RobotsTxt
+            - если robots.txt не содержит sitemap то подставляется индекс страница
         """
         result = {}
         database.add_robots()
@@ -78,6 +79,8 @@ class Crawler:
             robots_file.read()
             result[site_id] = robots_file
             urls = robots_file.sitemaps
+            if urls == []:
+                urls.append(base_url)
             urls_count = sitemap.add_urls(urls, robots, sitemap.SM_TYPE_TXT)
             request_time = time.time() - request_time
             logging.info('#END url %s, base_url %s, add urls %s, time %s',
