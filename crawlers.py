@@ -64,6 +64,7 @@ def scan(next_step=False, max_limit=0):
         # if page_type == sitemap.SM_TYPE_HTML:
         #     parsers.process_ranks(content, page_id)
 
+        """Страничная запись url'ов в БД"""
         [pool.apply_async(database.add_urls,
                      (new_pages_data[r:r+settings.CHUNK_SIZE], page_id, page_type,))
                      for r in range(0, len(new_pages_data), settings.CHUNK_SIZE)]
@@ -89,6 +90,7 @@ def scan(next_step=False, max_limit=0):
         #     break
     # print('scan scans:', scans)
     while pool._taskqueue.qsize() > 0:
+        """Ожидание опустошения пула"""
         time.sleep(1)
     pool.close()
     pool.join()

@@ -9,5 +9,5 @@ DB=MySQLdb.connect(
     host='127.0.0.1', user='andrewisakov', password='thua8Ohj',
     db='dbwpmod', use_unicode=True, charset='utf8')
 
-POOL_SIZE = 4
-CHUNK_SIZE = 64
+POOL_SIZE = 4 # Количество потоков multiprocessing.pool
+CHUNK_SIZE = 64 # Запись в БД страницами чере multiprocessing.pool
