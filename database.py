@@ -17,16 +17,19 @@ def load_persons(db=settings.DB):
     logging.info("load_persons: %s", keywords)
     return keywords
 
+
 def get_robots(db=settings.DB):
     SELECT = ('SELECT p.ID, p.Url, p.SiteID, s.Name FROM pages p ' 
               'JOIN sites s ON (s.ID=p.SiteID) ' 
               'WHERE RIGHT(p.Url, 10) = "robots.txt"')
     c = db.cursor()
     c.execute(SELECT)
-    rows = c.fetchall()
-    logging.info('get_robots: %s', rows)
+    for row in c.fetchall():
+        yield row
+    # logging.info('get_robots: %s', rows)
     c.close()
-    return rows
+    # return rows
+
 
 def add_robots(db=settings.DB):
     """ Добавляет в pages ссылки на robots.txt, если их нет для определенных сайтов  """
@@ -68,17 +71,17 @@ def update_person_page_rank(page_id, ranks, db=settings.DB):
         for person_id, rank in ranks.items():
             if rank > 0:
                 # Реализация INSERT OR UPDATE, т.к. кое кто отказался добавить UNIQUE_KEY :)
-                c = db.cursor()
-                c.execute(SELECT, (page_id, person_id))
-                rank_id = c.fetchone()
-                c.close()
-                c = db.cursor()
-                if rank_id:
-                    c.execute(UPDATE, (rank, rank_id))
-                else:
-                    c.execute(INSERT, (page_id, person_id, rank))
-                db.commit()
-                c.close()
+
+                with db.cursor() as c:
+                    c.execute(SELECT, (page_id, person_id))
+                    rank_id = c.fetchone()
+
+                with db.cursor() as c:
+                    if rank_id:
+                        c.execute(UPDATE, (rank, rank_id))
+                    else:
+                        c.execute(INSERT, (page_id, person_id, rank))
+                    db.commit()
 
 
 def update_last_scan_date(page_id, db=settings.DB):
@@ -92,7 +95,7 @@ def update_last_scan_date(page_id, db=settings.DB):
     print('update_last_scan_date %s complete...' % page_id)
 
 
-def get_pages_rows(last_scan_date, db=settings.DB):
+def get_pages_rows(last_scan_date=None, db=settings.DB):
     # db = settings.DB
     SELECT = ('select p.id, p.Url, p.SiteID, s.Name '
                 'from pages p '
@@ -107,12 +110,13 @@ def get_pages_rows(last_scan_date, db=settings.DB):
 
     with db.cursor() as c:
         c.execute(query, (last_scan_date))
-        pages = c.fetchall()
+        for page in c.fetchall():
+            yield page
 
-    return pages
+    # return pages
 
 
-def add_urls(pages_data, db=settings.DB):
+def add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
     """
         pages_data - dict(site_id, url, found_date_time, last_scan_date)
         добавляет url в таблицу pages если такой ссылки нет
@@ -146,6 +150,8 @@ def add_urls(pages_data, db=settings.DB):
             db.rollback()
 
     c.close()
+    if page_type_html and page_id:
+        update_last_scan_date(page_id)
     # print('\n_add_urls %s completed...' % rows)
     return rows
 

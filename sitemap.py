@@ -40,7 +40,7 @@ def get_file_type(sitemap):
     xml_pattern = "<urlset"
     html_pattern = "<!DOCTYPE"
     rec_pattern = "<sitemapindex"
-    
+
     if sitemap.find(xml_pattern) >= 0:
         return SM_TYPE_XML
     elif sitemap.find(html_pattern) >= 0:
@@ -123,7 +123,12 @@ def _filter_robots(urls, robots):
         return urls
     return urls
 
+
 def add_urls(urls, page, page_type):
+    # def urls_added():
+    #     if page_type != SM_TYPE_HTML:
+    #         db.update_last_scan_date(page_id)
+
     page_id, page_url, site_id, base_url = page
     new_pages_data = [{
         'site_id': site_id,
@@ -131,10 +136,11 @@ def add_urls(urls, page, page_type):
         'found_date_time': datetime.datetime.now(),
         'last_scan_date': None
         } for url in urls]
-    urls_count = db.add_urls(new_pages_data)
-    if page_type != SM_TYPE_HTML:
-        db.update_last_scan_date(page_id)
-    return urls_count
+    # .pool.apply_async(db.add_urls, (new_pages_data, page_id, page_type != SM_TYPE_HTML),)
+    return new_pages_data, page_id, page_type != SM_TYPE_HTML
+
+    # return len(new_pages_data)
+
 
 #@log_with
 def scan_urls(content, page, robots):
@@ -144,14 +150,17 @@ def scan_urls(content, page, robots):
         robots - класс с парсером robots.txt
         возвращает tuple c типом контента и списком ссылок
     """
+    print('sitemap.scan_urls:', page, robots)
     page_id, page_url, site_id, base_url = page
     page_type = get_file_type(content)
     urls = _get_urls(content, base_url, page_type)
 
-    # удаляем пустые
-    urls = [url for url in urls if url]
+    # удаляем пустые и оставляем уникальные
+    urls = list({url for url in urls if url})
+
 
     # TODO: фильтрацию по домену
     urls = _filter_robots(urls, robots)
-    urls_count = add_urls(urls, page, page_type)
-    return (page_type, urls_count)
+    # urls_count = add_urls(urls, page, page_type)
+    # return (page_type, urls_count)
+    return add_urls(urls, page, page_type)

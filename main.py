@@ -2,17 +2,17 @@
 
 import time
 import random
-import multiprocessing as mp
+from multiprocessing import Pool
 import logging
 import settings
 # import sqlite3
 
 # import Robot from Robot
-import sitemap
-from crawlers import Crawler
-
+# import sitemap
+# from crawlers import Crawler
+import crawlers
 
 if __name__ == '__main__':
-    c = Crawler(max_limit=10)
-    c.scan()
-    c.fresh()
+    crawlers.scan(max_limit=10)
+    # c.scan()
+    # c.fresh()

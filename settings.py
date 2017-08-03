@@ -8,3 +8,6 @@ import MySQLdb
 DB=MySQLdb.connect(
     host='127.0.0.1', user='andrewisakov', password='thua8Ohj',
     db='dbwpmod', use_unicode=True, charset='utf8')
+
+POOL_SIZE = 4
+CHUNK_SIZE = 64
