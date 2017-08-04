@@ -16,7 +16,7 @@ SM_TYPE_REC = 3 # рекурсивный sitemap содержит ссылки �
 
 
 def _esc_amp(text):
-    """ text строка, возвращает строку с замененными & """ 
+    """ text строка, возвращает строку с замененными & """
     # замена & на &amp;
     return re.sub(r'&(?!amp;)', r'&amp;', text, re.MULTILINE)
 
@@ -124,6 +124,10 @@ def _filter_robots(urls, robots):
     return urls
 
 
+def _filter_domain(urls, base_url):
+    return [url for url in urls if url.startswith(base_url)]
+
+
 def add_urls(urls, page, page_type):
     # def urls_added():
     #     if page_type != SM_TYPE_HTML:
@@ -160,6 +164,9 @@ def scan_urls(content, page, robots):
 
 
     # TODO: фильтрацию по домену
+    # удаляем пустые
+    # urls = [url for url in urls if url]
+    urls = _filter_domain(urls, base_url)
     urls = _filter_robots(urls, robots)
     # urls_count = add_urls(urls, page, page_type)
     # return (page_type, urls_count)

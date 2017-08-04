@@ -11,3 +11,23 @@ DB=MySQLdb.connect(
 
 POOL_SIZE = 4 # Количество потоков multiprocessing.pool
 CHUNK_SIZE = 64 # Запись в БД страницами чере multiprocessing.pool
+DATABASE = {
+    'host':'127.0.0.1',
+    'user':'andrewisakov',
+    'password':'thua8Ohj',
+    'db': 'database',
+    'use_unicode': True,
+    'charset': 'utf8'
+}
+
+TEST_DATABASE = {
+    'host':'127.0.0.1',
+    'user':'andrewisakov',
+    'password':'thua8Ohj',
+    'db': 'test_database',
+    'use_unicode': True,
+    'charset': 'utf8'
+}
+
+DEBUG = True
+LOG_FILE = 'crawler.log'

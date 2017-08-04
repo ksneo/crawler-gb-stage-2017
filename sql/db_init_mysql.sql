@@ -231,10 +231,10 @@ CREATE TABLE `pages` (
   `FoundDateTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `LastScanDate` datetime(6) DEFAULT NULL,
   `SiteID` int(11) NOT NULL,
-  `hash_url` varchar(32) DEFAULT NULL,
+  `Hash_url` varchar(32) DEFAULT NULL,
   PRIMARY KEY (`ID`),
   KEY `pages_SiteID_98e9f259_fk_sites_ID` (`SiteID`),
-  UNIQUE KEY `hash_url` (`hash_url`),
+  UNIQUE KEY `Hash_url` (`Hash_url`),
   CONSTRAINT `pages_SiteID_98e9f259_fk_sites_ID` FOREIGN KEY (`SiteID`) REFERENCES `sites` (`ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -252,6 +252,7 @@ CREATE TABLE `person_page_rank` (
   `Rank` int(11) NOT NULL,
   `PageID` int(11) NOT NULL,
   `PersonID` int(11) NOT NULL,
+  `Scan_date_datetime` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `person_page_rank_PageID_d0ea7ac6_fk_pages_ID` (`PageID`),
   KEY `person_page_rank_PersonID_e5138c65_fk_persons_ID` (`PersonID`),

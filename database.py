@@ -1,20 +1,25 @@
 import datetime
 import logging
 import settings
+import MySQLdb
 
 
-def load_persons(db=settings.DB):
+db = MySQLdb.connect(**settings.DATABASE)
+
+
+def load_persons():
     # db = settings.DB
     c = db.cursor()
     SELECT = 'select distinct Name, PersonID from keywords'
     c.execute(SELECT)
+    logging.debug('load_persons: %s', c._last_executed)
     keywords = {}
     for n, i in c.fetchall():
         if not i in keywords.keys():
             keywords[i] = []
         keywords[i] += [n.lower(), ]
     c.close()
-    logging.info("load_persons: %s", keywords)
+    logging.debug("load_persons: %s", keywords)
     return keywords
 
 
@@ -31,7 +36,8 @@ def get_robots(db=settings.DB):
     # return rows
 
 
-def add_robots(db=settings.DB):
+
+def add_robots():
     """ Добавляет в pages ссылки на robots.txt, если их нет для определенных сайтов  """
     # db = settings.DB
     # INSERT = 'insert into pages(SiteID, Url, FoundDateTime, LastScanDate) values (%s, %s, %s, %s)'
@@ -48,9 +54,8 @@ def add_robots(db=settings.DB):
     return add_robots
 
 
-def _not_have_pages(db=settings.DB):
+def _not_have_pages():
     """ Возвращает rows([site_name, site_id]) у которых нет страниц"""
-    # db = settings.DB
     c = db.cursor()
     c.execute('select s.Name, s.ID '
                 'from sites s '
@@ -61,10 +66,9 @@ def _not_have_pages(db=settings.DB):
     return rows
 
 
-def update_person_page_rank(page_id, ranks, db=settings.DB):
+def update_person_page_rank(page_id, ranks):
     if ranks:
-        print('update_person_page_rank', page_id, ranks)
-        # db = settings.DB
+        logging.debug('update_person_page_rank: %s %s', page_id, ranks)
         SELECT = 'select id from person_page_rank where PageID=%s and PersonID=%s'
         UPDATE = 'update person_page_rank set Rank=%s where ID=%s'
         INSERT = 'insert into person_page_rank (PageID, PersonID, Rank) values (%s, %s, %s)'
@@ -84,22 +88,21 @@ def update_person_page_rank(page_id, ranks, db=settings.DB):
                     db.commit()
 
 
-def update_last_scan_date(page_id, db=settings.DB):
-    print('update_last_scan_date %s' % page_id)
-    # db = settings.DB
+def update_last_scan_date(page_id):
     c = db.cursor()
     c.execute('update pages set LastScanDate=%s where ID=%s',
-                (datetime.datetime.now(), page_id))
+              (datetime.datetime.now(), page_id))
+    logging.debug('update_last_scan_date: %s', c._last_executed)
+
     db.commit()
     c.close()
-    print('update_last_scan_date %s complete...' % page_id)
 
 
 def get_pages_rows(last_scan_date=None, db=settings.DB):
     # db = settings.DB
     SELECT = ('select p.id, p.Url, p.SiteID, s.Name '
-                'from pages p '
-                'join sites s on (s.ID=p.SiteID)')
+              'from pages p '
+              'join sites s on (s.ID=p.SiteID)')
 
     if last_scan_date is None:
         WHERE = 'where p.LastScanDate is null'
@@ -130,7 +133,9 @@ def add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
     #         'WHERE NOT EXISTS (SELECT Url FROM pages WHERE Url = %s ) LIMIT 1')
 
     INSERT = ('INSERT INTO pages (SiteID, Url, FoundDateTime, LastScanDate, hash_url) '
-              'VALUES (%(site_id)s, %(url)s, %(found_date_time)s, %(last_scan_date)s, MD5(%(url)s))')
+              'VALUES (%(site_id)s, %(url)s, %(found_date_time)s, '
+              '%(last_scan_date)s, MD5(%(url)s)) '
+              'ON DUPLICATE KEY UPDATE FoundDateTime=%(found_date_time)s')
 
     c = db.cursor()
     rows = 0
@@ -138,15 +143,14 @@ def add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
     for page in pages_data:
         try:
             c.execute(INSERT, page)
+            logging.debug('database.add_urls: %s', c._last_executed)
             row = c.rowcount
             rows = rows + (row if row > 0 else 0)
             db.commit()
-            # print('_add_urls', (page, ))
-            print('+', end='', flush=True)
+            # print('+', end='', flush=True)
         except Exception as e:
-            # logging.error('add_urls exception %s', e)
-            # print('add_urls exception %s', e)
-            print('.', end='', flush=True)
+            logging.error('database.add_urls exception %s', e)
+            # print('.', end='', flush=True)
             db.rollback()
 
     c.close()
@@ -154,4 +158,3 @@ def add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
         update_last_scan_date(page_id)
     # print('\n_add_urls %s completed...' % rows)
     return rows
-
