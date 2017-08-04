@@ -37,6 +37,10 @@ def _get_content(url):
     print('%s loaded ...%s bytes' % (url, len(content)))
     return content
 
+def get_content_mp(page, all_robots):
+    page_id, url, site_id, base_url = page
+    content = _get_content(url)
+    return (content, page, all_robots)
 
 def scan_page(page, all_robots):
     print('scan_page:', page, all_robots)
@@ -52,6 +56,15 @@ def scan_page(page, all_robots):
 
 
 def scan(next_step=False, max_limit=0):
+    def get_content_complete(content, page, all_robots):
+        page_id, url, site_id, base_url = page
+        robots = all_robots.get(site_id)
+        pool.apply_async(sitemap.scan_urls, (content, page, robots,), callback=scan_page_complete, error_callback=scan_error)
+        pool.apply_async(parsers.process_ranks, (content, page_id, self.keywords,), callback=process_ranks_complete, error_callback=scan_error)
+
+    def process_ranks_complete(ranks):
+        pass
+
     def scan_page_complete(*args):
         """Страничная запись url'ов в БД"""
 
@@ -67,8 +80,8 @@ def scan(next_step=False, max_limit=0):
                      (new_pages_data[r:r+settings.CHUNK_SIZE], page_id, page_type,))
                      for r in range(0, len(new_pages_data), settings.CHUNK_SIZE)]
 
-    def scan_page_error(error):
-        print('scan_page_error:', error)
+    def scan_error(error):
+        logging.error('scan_error: %s', error)
 
     all_robots = robots.process_robots()
     pool = Pool(settings.POOL_SIZE)
@@ -81,8 +94,8 @@ def scan(next_step=False, max_limit=0):
     scans = []
     for page in database.get_pages_rows():
 
-        scans.append(pool.apply_async(scan_page, (page, all_robots),
-                            callback=scan_page_complete, error_callback=scan_page_error))
+        scans.append(pool.apply_async(get_content_mp, (page, all_robots),
+                            callback=get_content_complete, error_callback=scan_error))
         # add_urls_total += self.scan_page(page, all_robots)
         # if add_urls_total >= self.max_limit:
         #     break
