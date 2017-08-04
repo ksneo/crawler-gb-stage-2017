@@ -36,7 +36,6 @@ def get_robots(db=settings.DB):
     # return rows
 
 
-
 def add_robots():
     """ Добавляет в pages ссылки на robots.txt, если их нет для определенных сайтов  """
     # db = settings.DB
