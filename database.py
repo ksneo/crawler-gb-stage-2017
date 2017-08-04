@@ -24,8 +24,8 @@ def load_persons():
 
 
 def get_robots(db=settings.DB):
-    SELECT = ('SELECT p.ID, p.Url, p.SiteID, s.Name FROM pages p ' 
-              'JOIN sites s ON (s.ID=p.SiteID) ' 
+    SELECT = ('SELECT p.ID, p.Url, p.SiteID, s.Name FROM pages p '
+              'JOIN sites s ON (s.ID=p.SiteID) '
               'WHERE RIGHT(p.Url, 10) = "robots.txt"')
     c = db.cursor()
     c.execute(SELECT)
