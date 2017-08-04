@@ -15,7 +15,7 @@ DATABASE = {
     'host':'127.0.0.1',
     'user':'andrewisakov',
     'password':'thua8Ohj',
-    'db': 'database',
+    'db': 'dbwebpro',
     'use_unicode': True,
     'charset': 'utf8'
 }
@@ -24,10 +24,10 @@ TEST_DATABASE = {
     'host':'127.0.0.1',
     'user':'andrewisakov',
     'password':'thua8Ohj',
-    'db': 'test_database',
+    'db': 'dbwebpro_test',
     'use_unicode': True,
     'charset': 'utf8'
 }
 
-DEBUG = True
+DEBUG = False
 LOG_FILE = 'crawler.log'
