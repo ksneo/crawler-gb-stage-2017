@@ -11,6 +11,9 @@ DB=MySQLdb.connect(
 
 POOL_SIZE = 8 # Количество потоков multiprocessing.pool
 CHUNK_SIZE = 64 # Запись в БД страницами чере multiprocessing.pool
+WORK_LIMIT = 300
+WORK_TIMEOUT = 5
+
 DATABASE = {
     'host':'127.0.0.1',
     'user':'andrewisakov',

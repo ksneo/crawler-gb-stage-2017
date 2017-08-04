@@ -50,7 +50,7 @@ def add_robots():
             'last_scan_date': None } for r in new_sites]
     _add_robots = add_urls(ARGS)
 
-    logging.info('add_robots: %s robots url was add', add_robots)
+    logging.info('add_robots: %s robots url was add', _add_robots)
     return _add_robots
 
 
@@ -97,18 +97,19 @@ def update_last_scan_date(page_id, db=settings.DB):
         db.commit()
 
 
-def get_pages_rows(last_scan_date=None, db=settings.DB):
+def get_pages_rows(last_scan_date=None, max_limit=0, db=settings.DB):
     # db = settings.DB
-    SELECT = ('select p.id, p.Url, p.SiteID, s.Name '
-              'from pages p '
-              'join sites s on (s.ID=p.SiteID)')
-
+    SELECT = 'select p.id, p.Url, p.SiteID, s.Name '\
+             'from pages p '\
+             'join sites s on (s.ID=p.SiteID)'
+    if max_limit > 0:
+        LIMIT = ' LIMIT %s' % max_limit
     if last_scan_date is None:
         WHERE = 'where p.LastScanDate is null'
     else:
         WHERE = 'where p.LastScanDate = %s'
 
-    query = ' '.join([SELECT, WHERE])
+    query = ' '.join([SELECT, WHERE, LIMIT])
 
     with db.cursor() as c:
         c.execute(query, (last_scan_date))
