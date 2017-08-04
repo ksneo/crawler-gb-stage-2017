@@ -54,6 +54,7 @@ def process_robots():
                         url, base_url, urls_count, request_time)
     return result
 
+
 def _is_robot_txt(url):
     return url.upper().endswith('ROBOTS.TXT')
 

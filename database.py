@@ -4,7 +4,8 @@ import settings
 import MySQLdb
 
 
-db = MySQLdb.connect(**settings.DATABASE)
+# db = MySQLdb.connect(**settings.DATABASE)
+db = settings.DB
 
 
 def load_persons():
@@ -47,10 +48,10 @@ def add_robots():
             'url': '%s/robots.txt' % r[0],
             'found_date_time': datetime.datetime.now(),
             'last_scan_date': None } for r in new_sites]
-    add_robots = add_urls(ARGS)
+    _add_robots = add_urls(ARGS)
 
     logging.info('add_robots: %s robots url was add', add_robots)
-    return add_robots
+    return _add_robots
 
 
 def _not_have_pages():
@@ -87,14 +88,13 @@ def update_person_page_rank(page_id, ranks):
                     db.commit()
 
 
-def update_last_scan_date(page_id):
-    c = db.cursor()
-    c.execute('update pages set LastScanDate=%s where ID=%s',
-              (datetime.datetime.now(), page_id))
-    logging.debug('update_last_scan_date: %s', c._last_executed)
+def update_last_scan_date(page_id, db=settings.DB):
+    with db.cursor() as c:
+        c.execute('update pages set LastScanDate=%s where ID=%s',
+                (datetime.datetime.now(), page_id))
+        logging.debug('update_last_scan_date: %s', c._last_executed)
 
-    db.commit()
-    c.close()
+        db.commit()
 
 
 def get_pages_rows(last_scan_date=None, db=settings.DB):
