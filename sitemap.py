@@ -162,10 +162,6 @@ def scan_urls(content, page, robots):
     # удаляем пустые и оставляем уникальные
     urls = list({url for url in urls if url})
 
-
-    # TODO: фильтрацию по домену
-    # удаляем пустые
-    # urls = [url for url in urls if url]
     urls = _filter_domain(urls, base_url)
     urls = _filter_robots(urls, robots)
     # urls_count = add_urls(urls, page, page_type)
