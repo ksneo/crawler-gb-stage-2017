@@ -60,7 +60,7 @@ def scan(next_step=False, max_limit=0):
         page_id, url, site_id, base_url = page
         robots = all_robots.get(site_id)
         pool.apply_async(sitemap.scan_urls, (content, page, robots,), callback=scan_page_complete, error_callback=scan_error)
-        pool.apply_async(parsers.process_ranks, (content, page_id, self.keywords,), callback=process_ranks_complete, error_callback=scan_error)
+        pool.apply_async(parsers.process_ranks, (content, page_id, keywords,), callback=process_ranks_complete, error_callback=scan_error)
 
     def process_ranks_complete(ranks):
         pass
@@ -84,6 +84,7 @@ def scan(next_step=False, max_limit=0):
         logging.error('scan_error: %s', error)
 
     all_robots = robots.process_robots()
+    keywords = database.load_persons()
     pool = Pool(settings.POOL_SIZE)
 
     # print(all_robots)
