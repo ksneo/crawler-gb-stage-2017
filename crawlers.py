@@ -1,8 +1,9 @@
 #!/usr/bin/python3
 import datetime
 from io import BytesIO
-from multiprocessing import Pool
+# from multiprocessing import Pool
 import urllib.request
+import asyncio
 import re
 import gzip
 import time
@@ -17,10 +18,10 @@ import robots
 # from robots import RobotsTxt
 
 
-def _get_content(url):
+def _get_content(url, timeout=60):
     # print('%s loading ...', url)
     try:
-        rd = urllib.request.urlopen(url)
+        rd = urllib.request.urlopen(url, timeout=timeout)
     except Exception as e:
         logging.error('_get_content (%s) exception %s', url, e)
         return ""
@@ -37,10 +38,19 @@ def _get_content(url):
     print('%s loaded ...%s bytes' % (url, len(content)))
     return content
 
-def get_content_mp(page, all_robots):
+
+@asyncio.coroutine
+def get_content_mp(page, all_robots, timeout=60):
     page_id, url, site_id, base_url = page
-    content = _get_content(url)
-    return (content, page, all_robots)
+    content = _get_content(url, timeout)
+    # print('get_content_mp:', content)
+    # page_id, url, site_id, base_url = page
+    all_robots = all_robots.get(site_id)
+    # pool.apply_async(sitemap.scan_urls, (content, page, robots,), callback=scan_page_complete, error_callback=scan_error)
+
+    # pool.apply_async(parsers.process_ranks, (content, page_id, keywords,), callback=process_ranks_complete, error_callback=scan_error)
+    return content, page, all_robots
+
 
 def scan_page(page, all_robots):
     print('scan_page:', page, all_robots)
@@ -55,56 +65,57 @@ def scan_page(page, all_robots):
     return sitemap.scan_urls(content, page, all_robots)
 
 
-def scan(next_step=False, max_limit=0):
-    def get_content_complete(content, page, all_robots):
-        page_id, url, site_id, base_url = page
-        robots = all_robots.get(site_id)
-        pool.apply_async(sitemap.scan_urls, (content, page, robots,), callback=scan_page_complete, error_callback=scan_error)
-        pool.apply_async(parsers.process_ranks, (content, page_id, keywords,), callback=process_ranks_complete, error_callback=scan_error)
+@asyncio.coroutine
+def scan(loop, max_limit=0, next_step=False):
+    def process_ranks_complete(future):
+        print('process_ranks_complete:', future.result())
 
-    def process_ranks_complete(ranks):
-        pass
+    def scan_page_complete(future):
+        def add_urls_complete(future):
+            print('add_urls_complete:', future.result())
 
-    def scan_page_complete(*args):
         """Страничная запись url'ов в БД"""
 
-        args = args[0]
-        new_pages_data = args[0]
-        page_id = args[1]
-        page_type = args[2]
+        new_pages_data, page_id, page_type = future.result()
+        print('scan_page_complete:', page_id, page_type)
 
         # if page_type == sitemap.SM_TYPE_HTML:
         #     parsers.process_ranks(content, page_id)
 
-        [pool.apply_async(database.add_urls,
-                     (new_pages_data[r:r+settings.CHUNK_SIZE], page_id, page_type,))
-                     for r in range(0, len(new_pages_data), settings.CHUNK_SIZE)]
-
-    def scan_error(error):
-        logging.error('scan_error: %s', error)
+        fut = asyncio.Future()
+        asyncio.ensure_future(database.add_urls(fut, new_pages_data, page_id, page_type))
+        fut.add_done_callback(add_urls_complete)
+        # [pool.apply_async(database.add_urls,
+        #              (new_pages_data[r:r+settings.CHUNK_SIZE], page_id, page_type,))
+        #              for r in range(0, len(new_pages_data), settings.CHUNK_SIZE)]
 
     all_robots = robots.process_robots()
+    print('all_robots=', all_robots)
     keywords = database.load_persons()
-    pool = Pool(settings.POOL_SIZE)
+    print('keywords=', keywords)
 
-    # print(all_robots)
-    # pages = database.get_pages_rows(None)
     # TODO: добавить проверку если len(pages) = 0 то найти наименьшую дату и выбрать по ней.
     # print('Crawler.scan: pages=%s' % len(pages))
     add_urls_total = 0
-    scans = []
-    for page in database.get_pages_rows():
 
-        scans.append(pool.apply_async(get_content_mp, (page, all_robots),
-                            callback=get_content_complete, error_callback=scan_error))
-        # add_urls_total += self.scan_page(page, all_robots)
-        # if add_urls_total >= self.max_limit:
-        #     break
-    # print('scan scans:', scans)
-    while pool._taskqueue.qsize() > 0:
-        # Ожидание опустошения пула
-        time.sleep(1)
-    pool.close()
-    pool.join()
+    futures = set()
+    for page in database.get_pages_rows():
+        print(page)
+        if len(futures) < settings.POOL_SIZE:
+            futures.add(get_content_mp(page, all_robots, timeout=60))
+        else:
+            for future in asyncio.as_completed(futures):
+                content, page, robots_ = yield from future
+                # pool.apply_async(sitemap.scan_urls, (content, page, robots,), callback=scan_page_complete, error_callback=scan_error)
+                fut = asyncio.Future()
+                asyncio.ensure_future(sitemap.scan_urls(fut, content, page, robots_,))
+                page_id = page[1]
+                fut.add_done_callback(scan_page_complete)
+                # pool.apply_async(parsers.process_ranks, (content, page_id, keywords,), callback=process_ranks_complete, error_callback=scan_error)
+                fut = asyncio.Future()
+                asyncio.ensure_future(parsers.process_ranks(fut, content, page_id, keywords,))
+                fut.add_done_callback(process_ranks_complete)
+            futures = set()
+
     logging.info('Crawler.scan: Add %s new urls on date %s', add_urls_total, 'NULL')
     return add_urls_total

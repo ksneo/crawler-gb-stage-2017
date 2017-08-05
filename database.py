@@ -4,21 +4,21 @@ import settings
 import MySQLdb
 
 
-db = MySQLdb.connect(**settings.DATABASE)
+# db = MySQLdb.connect(**settings.DATABASE)
 
 
-def load_persons():
+def load_persons(db=settings.DB):
     # db = settings.DB
-    c = db.cursor()
-    SELECT = 'select distinct Name, PersonID from keywords'
-    c.execute(SELECT)
-    logging.debug('load_persons: %s', c._last_executed)
-    keywords = {}
-    for n, i in c.fetchall():
-        if not i in keywords.keys():
-            keywords[i] = []
-        keywords[i] += [n.lower(), ]
-    c.close()
+    with db.cursor() as c:
+        SELECT = 'select distinct Name, PersonID from keywords'
+        c.execute(SELECT)
+        logging.debug('load_persons: %s', c._last_executed)
+        keywords = {}
+        for n, i in c.fetchall():
+            if not i in keywords.keys():
+                keywords[i] = []
+            keywords[i] += [n.lower(), ]
+    # c.close()
     logging.debug("load_persons: %s", keywords)
     return keywords
 
@@ -47,25 +47,25 @@ def add_robots():
             'url': '%s/robots.txt' % r[0],
             'found_date_time': datetime.datetime.now(),
             'last_scan_date': None } for r in new_sites]
-    add_robots = add_urls(ARGS)
+    _add_robots = _add_urls(ARGS)
 
     logging.info('add_robots: %s robots url was add', add_robots)
-    return add_robots
+    return _add_robots
 
 
-def _not_have_pages():
+def _not_have_pages(db=settings.DB):
     """ Возвращает rows([site_name, site_id]) у которых нет страниц"""
-    c = db.cursor()
-    c.execute('select s.Name, s.ID '
-                'from sites s '
-                'left join pages p on (p.SiteID=s.ID) '
-                'where p.id is Null')
-    rows = c.fetchall()
-    c.close()
+    with db.cursor() as c:
+        c.execute('select s.Name, s.ID '
+                    'from sites s '
+                    'left join pages p on (p.SiteID=s.ID) '
+                    'where p.id is Null')
+        rows = c.fetchall()
+    # c.close()
     return rows
 
 
-def update_person_page_rank(page_id, ranks):
+def update_person_page_rank(page_id, ranks, db=settings.DB):
     if ranks:
         logging.debug('update_person_page_rank: %s %s', page_id, ranks)
         SELECT = 'select id from person_page_rank where PageID=%s and PersonID=%s'
@@ -87,14 +87,14 @@ def update_person_page_rank(page_id, ranks):
                     db.commit()
 
 
-def update_last_scan_date(page_id):
-    c = db.cursor()
-    c.execute('update pages set LastScanDate=%s where ID=%s',
-              (datetime.datetime.now(), page_id))
+def update_last_scan_date(page_id, db=settings.DB):
+    with db.cursor() as c:
+        c.execute('update pages set LastScanDate=%s where ID=%s',
+                (datetime.datetime.now(), page_id))
+        db.commit()
     logging.debug('update_last_scan_date: %s', c._last_executed)
 
-    db.commit()
-    c.close()
+    # c.close()
 
 
 def get_pages_rows(last_scan_date=None, db=settings.DB):
@@ -118,12 +118,8 @@ def get_pages_rows(last_scan_date=None, db=settings.DB):
     # return pages
 
 
-def add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
-    """
-        pages_data - dict(site_id, url, found_date_time, last_scan_date)
-        добавляет url в таблицу pages если такой ссылки нет
-    """
-    logging.info('add_urls inserting %s', len(pages_data))
+def _add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
+    logging.info('add_urls inserting %s' % len(pages_data))
 
     # медленный вариант, но работает без добавления дополнительного поля
     # отчасти был медленным из-за настройки mysql сервера, но и так разница в 3 раза
@@ -142,13 +138,14 @@ def add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
     for page in pages_data:
         try:
             c.execute(INSERT, page)
-            logging.debug('database.add_urls: %s', c._last_executed)
+            logging.debug('database.add_urls: %s' % c._last_executed)
             row = c.rowcount
             rows = rows + (row if row > 0 else 0)
             db.commit()
             # print('+', end='', flush=True)
         except Exception as e:
-            logging.error('database.add_urls exception %s', e)
+            logging.error('database._add_urls exception %s' % e)
+            logging.error('database._add_urls exception %s, %s' % (INSERT, page))
             # print('.', end='', flush=True)
             db.rollback()
 
@@ -156,4 +153,13 @@ def add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
     if page_type_html and page_id:
         update_last_scan_date(page_id)
     # print('\n_add_urls %s completed...' % rows)
-    return rows
+    # return rows
+
+
+async def add_urls(future, pages_data, page_id=None, page_type_html=False, db=settings.DB):
+    """
+        pages_data - dict(site_id, url, found_date_time, last_scan_date)
+        добавляет url в таблицу pages если такой ссылки нет
+    """
+    rows = _add_urls(pages_data, page_id, page_type_html, db)
+    future.set_result(rows)
