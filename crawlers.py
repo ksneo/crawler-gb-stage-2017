@@ -64,6 +64,7 @@ def scan(next_step=False, max_limit=0):
     def get_content_complete(*args):
         content, page, all_robots = args[0]
         page_id, url, site_id, base_url = page
+        page_type = parsers.get_file_type(content)
         if site_id not in urls_limits.keys():
             urls_limits[site_id] = 0
         urls_limits[site_id] += 1
@@ -75,9 +76,10 @@ def scan(next_step=False, max_limit=0):
             pool_size[0] += 1
             pool.apply_async(sitemap.scan_urls, (content, page, robots,),
                              callback=scan_page_complete, error_callback=scan_error)
-            pool_size[0] += 1
-            pool.apply_async(parsers.process_ranks, (content, page_id, keywords,),
-                             callback=process_ranks_complete, error_callback=scan_error)
+            if page_type == parsers.SM_TYPE_HTML:
+                pool_size[0] += 1
+                pool.apply_async(parsers.process_ranks, (content, page_id, keywords,),
+                                callback=process_ranks_complete, error_callback=scan_error)
 
     def process_ranks_complete(ranks):
         pool_size[0] -= 1
