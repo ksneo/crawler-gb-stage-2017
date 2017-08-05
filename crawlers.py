@@ -108,13 +108,13 @@ def scan(loop, max_limit=0, next_step=False):
                 content, page, robots_ = yield from future
                 # pool.apply_async(sitemap.scan_urls, (content, page, robots,), callback=scan_page_complete, error_callback=scan_error)
                 fut = asyncio.Future()
+                fut.add_done_callback(scan_page_complete)
                 asyncio.ensure_future(sitemap.scan_urls(fut, content, page, robots_,))
                 page_id = page[1]
-                fut.add_done_callback(scan_page_complete)
                 # pool.apply_async(parsers.process_ranks, (content, page_id, keywords,), callback=process_ranks_complete, error_callback=scan_error)
                 fut = asyncio.Future()
-                asyncio.ensure_future(parsers.process_ranks(fut, content, page_id, keywords,))
                 fut.add_done_callback(process_ranks_complete)
+                asyncio.ensure_future(parsers.process_ranks(fut, content, page_id, keywords,))
             futures = set()
 
     logging.info('Crawler.scan: Add %s new urls on date %s', add_urls_total, 'NULL')
