@@ -71,9 +71,9 @@ def parse_html(page_content, words_dict):
     return result
 
 
-def process_ranks(content, page_id):
+def process_ranks(content, page_id, keywords):
     logging.info('process_ranks: %s', content)
-    ranks = parse_html(content, self.keywords)
+    ranks = parse_html(content, keywords)
     logging.info('process_ranks: %s', ranks)
     database.update_person_page_rank(page_id, ranks)
     database.update_last_scan_date(page_id)
