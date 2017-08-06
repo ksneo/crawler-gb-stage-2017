@@ -48,7 +48,7 @@ def process_robots():
         robots_file.read()
         result[site_id] = robots_file
         urls = robots_file.sitemaps
-        urls_count = sitemap.add_urls(urls, robot, sitemap.SM_TYPE_TXT)
+        urls_count = database._add_urls(sitemap.add_urls(urls, robot, sitemap.SM_TYPE_TXT))
         request_time = time.time() - request_time
         logging.info('#END url %s, base_url %s, add urls %s, time %s',
                         url, base_url, urls_count, request_time)

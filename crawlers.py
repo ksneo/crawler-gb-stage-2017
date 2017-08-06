@@ -43,12 +43,8 @@ def _get_content(url, timeout=60):
 def get_content_mp(page, all_robots, timeout=60):
     page_id, url, site_id, base_url = page
     content = _get_content(url, timeout)
-    # print('get_content_mp:', content)
-    # page_id, url, site_id, base_url = page
-    all_robots = all_robots.get(site_id)
-    # pool.apply_async(sitemap.scan_urls, (content, page, robots,), callback=scan_page_complete, error_callback=scan_error)
-
-    # pool.apply_async(parsers.process_ranks, (content, page_id, keywords,), callback=process_ranks_complete, error_callback=scan_error)
+    all_robots_ = all_robots.get(site_id)
+    print('get_content_mp: %s **%s**' % (page, all_robots_))
     return content, page, all_robots
 
 
@@ -63,6 +59,21 @@ def scan_page(page, all_robots):
     all_robots = all_robots.get(site_id)
 
     return sitemap.scan_urls(content, page, all_robots)
+
+
+def scan_page_start(futures):
+    print('scan_page_start start futures:', futures)
+    for future in asyncio.as_completed(futures):
+        content, page, robots_ = yield from future
+        # pool.apply_async(sitemap.scan_urls, (content, page, robots,), callback=scan_page_complete, error_callback=scan_error)
+        fut = asyncio.Future()
+        fut.add_done_callback(scan_page_complete)
+        asyncio.ensure_future(sitemap.scan_urls(fut, content, page, robots_,))
+        page_id = page[1]
+        # pool.apply_async(parsers.process_ranks, (content, page_id, keywords,), callback=process_ranks_complete, error_callback=scan_error)
+        fut = asyncio.Future()
+        fut.add_done_callback(process_ranks_complete)
+        asyncio.ensure_future(parsers.process_ranks(fut, content, page_id, keywords,))
 
 
 @asyncio.coroutine
@@ -90,7 +101,6 @@ def scan(loop, max_limit=0, next_step=False):
         #              for r in range(0, len(new_pages_data), settings.CHUNK_SIZE)]
 
     all_robots = robots.process_robots()
-    print('all_robots=', all_robots)
     keywords = database.load_persons()
     print('keywords=', keywords)
 
@@ -101,21 +111,27 @@ def scan(loop, max_limit=0, next_step=False):
     futures = set()
     for page in database.get_pages_rows():
         print(page)
+        print('all_robots=', all_robots)
         if len(futures) < settings.POOL_SIZE:
             futures.add(get_content_mp(page, all_robots, timeout=60))
         else:
-            for future in asyncio.as_completed(futures):
-                content, page, robots_ = yield from future
-                # pool.apply_async(sitemap.scan_urls, (content, page, robots,), callback=scan_page_complete, error_callback=scan_error)
-                fut = asyncio.Future()
-                fut.add_done_callback(scan_page_complete)
-                asyncio.ensure_future(sitemap.scan_urls(fut, content, page, robots_,))
-                page_id = page[1]
-                # pool.apply_async(parsers.process_ranks, (content, page_id, keywords,), callback=process_ranks_complete, error_callback=scan_error)
-                fut = asyncio.Future()
-                fut.add_done_callback(process_ranks_complete)
-                asyncio.ensure_future(parsers.process_ranks(fut, content, page_id, keywords,))
+            scan_page_start(futures)
             futures = set()
-
+    # scan_page_start(futures)
+    # print(futures)
+    for future in asyncio.as_completed(futures):
+        content, page, robots_ = yield from future
+        print(page, robots_)
+        # pool.apply_async(sitemap.scan_urls, (content, page, robots,), callback=scan_page_complete, error_callback=scan_error)
+        fut = asyncio.Future()
+        asyncio.ensure_future(sitemap.scan_urls(fut, content, page, robots_,))
+        fut.add_done_callback(scan_page_complete)
+        page_id = page[1]
+        # pool.apply_async(parsers.process_ranks, (content, page_id, keywords,), callback=process_ranks_complete, error_callback=scan_error)
+        fut = asyncio.Future()
+        asyncio.ensure_future(parsers.process_ranks(fut, content, page_id, keywords,))
+        fut.add_done_callback(process_ranks_complete)
+    while 1:
+        asyncio.sleep(1)
     logging.info('Crawler.scan: Add %s new urls on date %s', add_urls_total, 'NULL')
     return add_urls_total

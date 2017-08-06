@@ -132,11 +132,11 @@ def _add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
               '%(last_scan_date)s, MD5(%(url)s)) '
               'ON DUPLICATE KEY UPDATE FoundDateTime=%(found_date_time)s')
 
-    c = db.cursor()
     rows = 0
+    with db.cursor() as c:
+        c.executemany(INSERT, pages_data)
+        rows = c.rowcount
 
-    c.executemany(INSERT, ARGS)
-    rows = c.rowcount
     """
     for page in pages_data:
         try:
@@ -152,7 +152,7 @@ def _add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
             # print('.', end='', flush=True)
             db.rollback()
     """
-    c.close()
+    # c.close()
     if page_type_html and page_id:
         update_last_scan_date(page_id)
     # print('\n_add_urls %s completed...' % rows)
