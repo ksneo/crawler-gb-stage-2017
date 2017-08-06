@@ -135,6 +135,9 @@ def _add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
     c = db.cursor()
     rows = 0
 
+    c.executemany(INSERT, ARGS)
+    rows = c.rowcount
+    """
     for page in pages_data:
         try:
             c.execute(INSERT, page)
@@ -148,12 +151,12 @@ def _add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
             logging.error('database._add_urls exception %s, %s' % (INSERT, page))
             # print('.', end='', flush=True)
             db.rollback()
-
+    """
     c.close()
     if page_type_html and page_id:
         update_last_scan_date(page_id)
     # print('\n_add_urls %s completed...' % rows)
-    # return rows
+    return rows
 
 
 async def add_urls(future, pages_data, page_id=None, page_type_html=False, db=settings.DB):
