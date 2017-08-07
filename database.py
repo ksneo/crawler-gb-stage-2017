@@ -4,9 +4,6 @@ import settings
 import MySQLdb
 
 
-# db = MySQLdb.connect(**settings.DATABASE)
-
-
 def load_persons(db=settings.DB):
     # db = settings.DB
     with db.cursor() as c:
@@ -48,7 +45,7 @@ def add_robots():
             'url': '%s/robots.txt' % r[0],
             'found_date_time': datetime.datetime.now(),
             'last_scan_date': None } for r in new_sites]
-    _add_robots = _add_urls(ARGS)
+    _add_robots = add_urls(ARGS)
 
     logging.info('add_robots: %s robots url was add', _add_robots)
     return _add_robots
@@ -92,24 +89,24 @@ def update_last_scan_date(page_id, db=settings.DB):
     with db.cursor() as c:
         c.execute('update pages set LastScanDate=%s where ID=%s',
                 (datetime.datetime.now(), page_id))
+        logging.debug('update_last_scan_date: %s', c._last_executed)
+
         db.commit()
-    logging.debug('update_last_scan_date: %s', c._last_executed)
-
-    # c.close()
 
 
-def get_pages_rows(last_scan_date=None, db=settings.DB):
+def get_pages_rows(last_scan_date=None, max_limit=0, db=settings.DB):
     # db = settings.DB
-    SELECT = ('select p.id, p.Url, p.SiteID, s.Name '
-              'from pages p '
-              'join sites s on (s.ID=p.SiteID)')
-
+    SELECT = 'select p.id, p.Url, p.SiteID, s.Name '\
+             'from pages p '\
+             'join sites s on (s.ID=p.SiteID)'
+    if max_limit > 0:
+        LIMIT = ' LIMIT %s' % max_limit
     if last_scan_date is None:
         WHERE = 'where p.LastScanDate is null'
     else:
         WHERE = 'where p.LastScanDate = %s'
 
-    query = ' '.join([SELECT, WHERE])
+    query = ' '.join([SELECT, WHERE, LIMIT])
 
     with db.cursor() as c:
         c.execute(query, (last_scan_date))
