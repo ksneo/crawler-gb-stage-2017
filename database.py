@@ -26,13 +26,13 @@ def load_persons(db=settings.DB):
 def get_robots(db=settings.DB):
     SELECT = ('SELECT p.ID, p.Url, p.SiteID, s.Name FROM pages p '
               'JOIN sites s ON (s.ID=p.SiteID) '
-              'WHERE RIGHT(p.Url, 10) = "robots.txt"')
-    c = db.cursor()
-    c.execute(SELECT)
-    for row in c.fetchall():
-        yield row
+              'WHERE p.Url like "%/robots.txt"')
+    with db.cursor() as c:
+        c.execute(SELECT)
+        for row in c.fetchall():
+            yield row
     # logging.info('get_robots: %s', rows)
-    c.close()
+    # c.close()
     # return rows
 
 
@@ -42,6 +42,7 @@ def add_robots():
     # INSERT = 'insert into pages(SiteID, Url, FoundDateTime, LastScanDate) values (%s, %s, %s, %s)'
     new_sites = _not_have_pages()
     # ARGS = [(r[1], '%s/robots.txt' % r[0], None, datetime.datetime.now(), hashlib.md5(('%s/robots.txt' % r[0]).encode()).hexdigest()) for r in new_sites]
+    print('add_robots:', new_sites)
     ARGS = [{
             'site_id': r[1],
             'url': '%s/robots.txt' % r[0],
@@ -49,7 +50,7 @@ def add_robots():
             'last_scan_date': None } for r in new_sites]
     _add_robots = _add_urls(ARGS)
 
-    logging.info('add_robots: %s robots url was add', add_robots)
+    logging.info('add_robots: %s robots url was add', _add_robots)
     return _add_robots
 
 
@@ -120,6 +121,7 @@ def get_pages_rows(last_scan_date=None, db=settings.DB):
 
 def _add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
     logging.info('add_urls inserting %s' % len(pages_data))
+    print('_add_urls:', pages_data)
 
     # медленный вариант, но работает без добавления дополнительного поля
     # отчасти был медленным из-за настройки mysql сервера, но и так разница в 3 раза
@@ -136,6 +138,7 @@ def _add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
     with db.cursor() as c:
         c.executemany(INSERT, pages_data)
         rows = c.rowcount
+        db.commit()
 
     """
     for page in pages_data:
@@ -155,7 +158,7 @@ def _add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
     # c.close()
     if page_type_html and page_id:
         update_last_scan_date(page_id)
-    # print('\n_add_urls %s completed...' % rows)
+    print('_add_urls %s completed...' % rows)
     return rows
 
 

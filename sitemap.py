@@ -6,7 +6,7 @@ import re
 import logging
 import datetime
 from log import log_with
-import database as db
+# import database as db
 
 
 SM_TYPE_XML = 0
@@ -147,7 +147,7 @@ def add_urls(urls, page, page_type):
 
 
 #@log_with
-async def scan_urls(future, content, page, robots):
+def scan_urls(content, page, robots):
     """
         content - содержимое сайтмэпа или html str,
         page - tuple с инфой о странице page_id, url, site_id, base_url
@@ -167,4 +167,4 @@ async def scan_urls(future, content, page, robots):
     # urls_count = add_urls(urls, page, page_type)
     # return (page_type, urls_count)
     # return add_urls(urls, page, page_type)
-    future.set_result(add_urls(urls, page, page_type))
+    return add_urls(urls, page, page_type)
