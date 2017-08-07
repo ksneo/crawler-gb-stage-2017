@@ -154,7 +154,7 @@ def scan_urls(content, page, robots):
         robots - класс с парсером robots.txt
         возвращает tuple c типом контента и списком ссылок
     """
-    print('sitemap.scan_urls:', page, robots)
+    logging.info('sitemap.scan_urls:', page, robots)
     page_id, page_url, site_id, base_url = page
     page_type = get_file_type(content)
     urls = _get_urls(content, base_url, page_type)
