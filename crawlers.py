@@ -92,8 +92,11 @@ def scan(next_step=False, max_limit=0):
                                      callback=process_ranks_complete,
                                      error_callback=process_ranks_error)
 
-    def process_ranks_complete(ranks):
-        print('process_ranks_complete:', ranks)
+    def process_ranks_complete(*args):
+        ranks, page_id = args[0]
+        print('process_ranks_complete:', ranks, page_id)
+        database.update_person_page_rank(page_id, ranks)
+
 
     def process_ranks_error(error):
         print('process_ranks_error:', error)
