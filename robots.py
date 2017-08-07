@@ -2,7 +2,7 @@ from urllib.robotparser import RobotFileParser
 from urllib.parse import unquote
 import time
 import logging
-import database
+# import database
 import sitemap
 
 

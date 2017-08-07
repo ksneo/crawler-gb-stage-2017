@@ -143,10 +143,7 @@ def add_urls(urls, page, page_type):
     # .pool.apply_async(db.add_urls, (new_pages_data, page_id, page_type != SM_TYPE_HTML),)
     return new_pages_data, page_id, page_type != SM_TYPE_HTML
 
-    # return len(new_pages_data)
 
-
-#@log_with
 def scan_urls(content, page, robots):
     """
         content - содержимое сайтмэпа или html str,
@@ -164,7 +161,11 @@ def scan_urls(content, page, robots):
 
     urls = _filter_domain(urls, base_url)
     urls = _filter_robots(urls, robots)
-    # urls_count = add_urls(urls, page, page_type)
-    # return (page_type, urls_count)
+    new_pages_data = [{
+        'site_id': site_id,
+        'url': url,
+        'found_date_time': datetime.datetime.now(),
+        'last_scan_date': None
+        } for url in urls]
     # return add_urls(urls, page, page_type)
-    return add_urls(urls, page, page_type)
+    return new_pages_data, page_id, page_type == SM_TYPE_HTML

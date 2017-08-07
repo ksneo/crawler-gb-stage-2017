@@ -99,8 +99,7 @@ def get_pages_rows(last_scan_date=None, max_limit=0, db=settings.DB):
     SELECT = 'select p.id, p.Url, p.SiteID, s.Name '\
              'from pages p '\
              'join sites s on (s.ID=p.SiteID)'
-    if max_limit > 0:
-        LIMIT = ' LIMIT %s' % max_limit
+    LIMIT = ' LIMIT %s' % max_limit if max_limit > 0 else ''
     if last_scan_date is None:
         WHERE = 'where p.LastScanDate is null'
     else:
@@ -118,7 +117,7 @@ def get_pages_rows(last_scan_date=None, max_limit=0, db=settings.DB):
 
 def _add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
     logging.info('add_urls inserting %s' % len(pages_data))
-    print('_add_urls:', pages_data)
+    # print('_add_urls:', pages_data)
 
     # медленный вариант, но работает без добавления дополнительного поля
     # отчасти был медленным из-за настройки mysql сервера, но и так разница в 3 раза
@@ -132,37 +131,21 @@ def _add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
               'ON DUPLICATE KEY UPDATE FoundDateTime=%(found_date_time)s')
 
     rows = 0
-    with db.cursor() as c:
-        c.executemany(INSERT, pages_data)
-        rows = c.rowcount
-        db.commit()
-
-    """
     for page in pages_data:
-        try:
+        with db.cursor() as c:
             c.execute(INSERT, page)
-            logging.debug('database.add_urls: %s' % c._last_executed)
-            row = c.rowcount
-            rows = rows + (row if row > 0 else 0)
-            db.commit()
-            # print('+', end='', flush=True)
-        except Exception as e:
-            logging.error('database._add_urls exception %s' % e)
-            logging.error('database._add_urls exception %s, %s' % (INSERT, page))
-            # print('.', end='', flush=True)
-            db.rollback()
-    """
-    # c.close()
-    if page_type_html and page_id:
-        update_last_scan_date(page_id)
-    print('_add_urls %s completed...' % rows)
-    return rows
+            rows += c.rowcount
+    db.commit()
+
+    # if page_type_html and page_id:
+    #     update_last_scan_date(page_id)
+    # print('_add_urls %s completed...' % rows)
+    return rows, page_id
 
 
-async def add_urls(future, pages_data, page_id=None, page_type_html=False, db=settings.DB):
+def add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
     """
         pages_data - dict(site_id, url, found_date_time, last_scan_date)
         добавляет url в таблицу pages если такой ссылки нет
     """
-    rows = _add_urls(pages_data, page_id, page_type_html, db)
-    future.set_result(rows)
+    return _add_urls(pages_data, page_id, page_type_html, db)

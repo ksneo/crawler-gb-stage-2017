@@ -13,6 +13,6 @@ import settings
 import crawlers
 
 if __name__ == '__main__':
-    crawlers.scan(10)
+    crawlers.scan(max_limit=10)
     # c.scan()
     # c.fresh()
