@@ -105,12 +105,22 @@ def scan(next_step=False, max_limit=0):
     def scan_page_complete(*args):
         new_pages_data, page_id, page_type = args[0]
         logging.info('scan_page_complete: %s %s %s' % (page_id, len(new_pages_data), page_type))
+        for r in range(0, len(new_pages_data), settings.CHUNK_SIZE):
+            with pool_sem:
+                pool.apply_async(database.add_urls,
+                                 (new_pages_data[r:r+settings.CHUNK_SIZE],
+                                  page_id,
+                                  page_type,),
+                                 callback=add_urls_complete,
+                                 error_callback=add_urls_error)
+        '''
         with pool_sem:
             pool.apply_async(database.add_urls,
                              (new_pages_data,
                               page_id, page_type,),
                              callback=add_urls_complete,
                              error_callback=add_urls_error)
+        '''
 
     def add_urls_complete(*args):
         rows, page_id = args[0]
