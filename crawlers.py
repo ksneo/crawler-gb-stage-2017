@@ -99,7 +99,7 @@ def scan(next_step=False, max_limit=0):
         logging.info('process_ranks_complete:', ranks, page_id)
         database.update_person_page_rank(page_id, ranks)
 
-    def process_ranks_error(error):
+    def process_ranks_error(*error):
         logging.error('process_ranks_error:', error)
 
     def scan_page_complete(*args):
@@ -117,10 +117,10 @@ def scan(next_step=False, max_limit=0):
         logging.info('add_urls_complete:', rows, page_id)
         database.update_last_scan_date(page_id)
 
-    def add_urls_error(error):
+    def add_urls_error(*error):
         logging.error('add_urls_error:', error)
 
-    def scan_page_error(error):
+    def scan_page_error(*error):
         logging.error('scan_page_error:', error)
 
     global pool
