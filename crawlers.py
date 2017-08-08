@@ -129,6 +129,7 @@ def scan(next_step=False, max_limit=0):
 
     def add_urls_error(*error):
         logging.error('add_urls_error: %s' % error)
+        # TODO: Поставить сбойнувший CHUNK в очередь
 
     def scan_page_error(*error):
         logging.error('scan_page_error: %s' % error)
