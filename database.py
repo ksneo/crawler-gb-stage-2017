@@ -3,8 +3,10 @@ import logging
 import settings
 import MySQLdb
 
+connect = MySQLdb.connect(**settings.DB)
 
-def load_persons(db=settings.DB):
+
+def load_persons(db=connect):
     # db = settings.DB
     with db.cursor() as c:
         SELECT = 'select distinct Name, PersonID from keywords'
@@ -20,7 +22,7 @@ def load_persons(db=settings.DB):
     return keywords
 
 
-def get_robots(db=settings.DB):
+def get_robots(db=connect):
     SELECT = ('SELECT p.ID, p.Url, p.SiteID, s.Name FROM pages p '
               'JOIN sites s ON (s.ID=p.SiteID) '
               'WHERE p.Url like "%/robots.txt"')
@@ -51,7 +53,7 @@ def add_robots():
     return _add_robots
 
 
-def _not_have_pages(db=settings.DB):
+def _not_have_pages(db=connect):
     """ Возвращает rows([site_name, site_id]) у которых нет страниц"""
     with db.cursor() as c:
         c.execute('select s.Name, s.ID '
@@ -63,7 +65,7 @@ def _not_have_pages(db=settings.DB):
     return rows
 
 
-def update_person_page_rank(page_id, ranks, db=settings.DB):
+def update_person_page_rank(page_id, ranks, db=connect):
     if ranks:
         logging.debug('update_person_page_rank: %s %s', page_id, ranks)
         SELECT = 'select id from person_page_rank where PageID=%s and PersonID=%s'
@@ -85,7 +87,7 @@ def update_person_page_rank(page_id, ranks, db=settings.DB):
                     db.commit()
 
 
-def update_last_scan_date(page_id, db=settings.DB):
+def update_last_scan_date(page_id, db=connect):
     with db.cursor() as c:
         c.execute('update pages set LastScanDate=%s where ID=%s',
                 (datetime.datetime.now(), page_id))
@@ -94,7 +96,7 @@ def update_last_scan_date(page_id, db=settings.DB):
         db.commit()
 
 
-def get_pages_rows(last_scan_date=None, max_limit=0, db=settings.DB):
+def get_pages_rows(last_scan_date=None, max_limit=0, db=connect):
     # db = settings.DB
     SELECT = 'select p.id, p.Url, p.SiteID, s.Name '\
              'from pages p '\
@@ -112,11 +114,13 @@ def get_pages_rows(last_scan_date=None, max_limit=0, db=settings.DB):
         for page in c.fetchall():
             yield page
 
+    db.close()
     # return pages
 
 
-def _add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
+def _add_urls(pages_data, page_id=None, page_type_html=False, db=connect):
     logging.info('add_urls inserting %s' % len(pages_data))
+    db = MySQLdb.connect(**settings.DB)
     # print('_add_urls:', pages_data)
 
     # медленный вариант, но работает без добавления дополнительного поля
@@ -131,19 +135,25 @@ def _add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
               'ON DUPLICATE KEY UPDATE FoundDateTime=%(found_date_time)s')
 
     rows = 0
+    with db.cursor() as c:
+        c.executemany(INSERT, pages_data)
+        rows += c.rowcount
+    db.commit()
+    '''
     for page in pages_data:
         with db.cursor() as c:
             c.execute(INSERT, page)
             rows += c.rowcount
     db.commit()
-
+    '''
+    db.close()
     # if page_type_html and page_id:
     #     update_last_scan_date(page_id)
     # print('_add_urls %s completed...' % rows)
     return rows, page_id
 
 
-def add_urls(pages_data, page_id=None, page_type_html=False, db=settings.DB):
+def add_urls(pages_data, page_id=None, page_type_html=False, db=connect):
     """
         pages_data - dict(site_id, url, found_date_time, last_scan_date)
         добавляет url в таблицу pages если такой ссылки нет
