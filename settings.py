@@ -18,7 +18,7 @@ DATABASE = {
     'host':'127.0.0.1',
     'user':'andrewisakov',
     'password':'thua8Ohj',
-    'db': 'dbwebpro',
+    'db': 'dbwpmod',
     'use_unicode': True,
     'charset': 'utf8'
 }

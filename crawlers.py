@@ -41,7 +41,7 @@ def _get_content(url, timeout=60):
 
 def get_content(page, all_robots, timeout=60):
     logging.info('get_content: %s' % (page,))
-    page_id, url, site_id, base_url = page
+    page_id, url, site_id, base_url, found_datetime = page
     content = _get_content(url, timeout)
     urls = all_robots.get(site_id).sitemaps
     # TODO: Выяснить тип контента
@@ -72,7 +72,7 @@ def scan(next_step=False, max_limit=0):
 
     def get_content_complete(*args):
         content, page, robots = args[0]
-        page_id, url, site_id, base_url = page
+        page_id, url, site_id, base_url, found_datetime = page
         page_type = parsers.get_file_type(content)
         if site_id not in urls_limits.keys():
             urls_limits[site_id] = 0
@@ -90,14 +90,14 @@ def scan(next_step=False, max_limit=0):
                 """Сканирование keywords"""
                 with pool_sem:
                     pool.apply_async(parsers.process_ranks,
-                                     (content, page_id, keywords,),
+                                     (content, page_id, keywords, found_datetime),
                                      callback=process_ranks_complete,
                                      error_callback=process_ranks_error)
 
     def process_ranks_complete(*args):
-        ranks, page_id = args[0]
+        ranks, page_id, found_datetime = args[0]
         logging.info('process_ranks_complete: %s %s' % (ranks, page_id))
-        database.update_person_page_rank(page_id, ranks)
+        database.update_person_page_rank(page_id, ranks, found_datetime)
 
     def process_ranks_error(*error):
         logging.error('process_ranks_error: %s' % error)

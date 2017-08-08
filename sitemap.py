@@ -155,7 +155,7 @@ def scan_urls(content, page, robots):
         возвращает tuple c типом контента и списком ссылок
     """
     logging.info('sitemap.scan_urls: %s %s' % (page, robots))
-    page_id, page_url, site_id, base_url = page
+    page_id, page_url, site_id, base_url, found_datetime = page
     page_type = get_file_type(content)
     urls = _get_urls(content, base_url, page_type)
 

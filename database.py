@@ -65,40 +65,47 @@ def _not_have_pages(db=connect):
     return rows
 
 
-def update_person_page_rank(page_id, ranks, db=connect):
+def update_person_page_rank(page_id, ranks, found_datetime, db=connect):
     if ranks:
         logging.debug('update_person_page_rank: %s %s', page_id, ranks)
-        SELECT = 'select id from person_page_rank where PageID=%s and PersonID=%s'
+        SELECT = 'select id, rank from person_page_rank where PageID=%s and PersonID=%s and Scan_date_datetime=%s'
         UPDATE = 'update person_page_rank set Rank=%s where ID=%s'
-        INSERT = 'insert into person_page_rank (PageID, PersonID, Rank) values (%s, %s, %s)'
+        INSERT = 'insert into person_page_rank (PageID, PersonID, Rank, Scan_date_datetime) values (%s, %s, %s, %s)'
+        db = MySQLdb.connect(**settings.DB)
         for person_id, rank in ranks.items():
             if rank > 0:
                 # Реализация INSERT OR UPDATE, т.к. кое кто отказался добавить UNIQUE_KEY :)
 
                 with db.cursor() as c:
-                    c.execute(SELECT, (page_id, person_id))
-                    rank_id = c.fetchone()
+                    try:
+                        c.execute(SELECT, (page_id, person_id, found_datetime))
+                        rank_id, rank_ = c.fetchone()
+                    except:
+                        rank_id, rank_ = None, 0
 
                 with db.cursor() as c:
                     if rank_id:
-                        c.execute(UPDATE, (rank, rank_id))
+                        c.execute(UPDATE, (rank, rank_id, ))
                     else:
-                        c.execute(INSERT, (page_id, person_id, rank))
+                        c.execute(INSERT, (page_id, person_id, rank, found_datetime))
                     db.commit()
+        db.close()
 
 
 def update_last_scan_date(page_id, db=connect):
+    db = MySQLdb.connect(**settings.DB)
     with db.cursor() as c:
+        logging.debug('update_last_scan_date: update pages set LastScanDate=%s where ID=%s' % (datetime.datetime.now(), page_id))
         c.execute('update pages set LastScanDate=%s where ID=%s',
-                (datetime.datetime.now(), page_id))
-        logging.debug('update_last_scan_date: %s', c._last_executed)
+                  (datetime.datetime.now(), page_id))
 
         db.commit()
+    db.close()
 
 
 def get_pages_rows(last_scan_date=None, max_limit=0, db=connect):
     # db = settings.DB
-    SELECT = 'select p.id, p.Url, p.SiteID, s.Name '\
+    SELECT = 'select p.id, p.Url, p.SiteID, s.Name, p.FoundDateTime '\
              'from pages p '\
              'join sites s on (s.ID=p.SiteID)'
     LIMIT = ' LIMIT %s' % max_limit if max_limit > 0 else ''
