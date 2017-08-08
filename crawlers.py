@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import datetime
 from io import BytesIO
-from multiprocessing import Pool, Semaphore
+from multiprocessing import Pool, BoundedSemaphore, Semaphore
 import urllib.request
 # import asyncio
 import re
@@ -137,7 +137,9 @@ def scan(next_step=False, max_limit=0):
     global pool
     pool = Pool(settings.POOL_SIZE)
     global pool_sem
+    # pool_sem = BoundedSemaphore()
     pool_sem = Semaphore(settings.POOL_SIZE * 2)
+    # pool._taskqueue.maxsize = settings.POOL_SIZE * 2
 
     database.add_robots()
     all_robots = robots.process_robots(database.get_robots())
@@ -149,17 +151,23 @@ def scan(next_step=False, max_limit=0):
 
     for page in database.get_pages_rows(max_limit=max_limit):
         with pool_sem:
-            # print('scan.pool:', pool_sem.get_value())
+            add_urls_total += 1
+            print('scan.pool:', pool_sem.get_value())
             pool.apply_async(get_content, (page, all_robots),
                              callback=get_content_complete,
                              error_callback=get_content_error)
             # print('scan.pool_size:', pool._taskqueue.qsize())
 
+    close_pool_wait(add_urls_total)
+    logging.info('Crawler.scan: Add %s new urls on date %s' % (add_urls_total, 'NULL'))
+    return add_urls_total
+
+
+def close_pool_wait(add_urls_total):
+    # print(pool_sem.get_value())
     while True:
         # Ожидание опустошения пула
         time.sleep(1)
-        print('pool.qsize:', pool._taskqueue.qsize())
+        print('pool.qsize:', pool_sem.get_value())
     pool.close()
     pool.join()
-    logging.info('Crawler.scan: Add %s new urls on date %s' % (add_urls_total, 'NULL'))
-    return add_urls_total
