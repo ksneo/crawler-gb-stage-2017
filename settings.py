@@ -10,7 +10,7 @@
 #     db='dbwpmod', use_unicode=True, charset='utf8')
 
 POOL_SIZE = 8 # Количество потоков multiprocessing.pool
-CHUNK_SIZE = 512 # Запись в БД страницами чере multiprocessing.pool
+CHUNK_SIZE = 128 # Запись в БД страницами чере multiprocessing.pool
 WORK_LIMIT = 300
 WORK_TIMEOUT = 5
 

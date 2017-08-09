@@ -71,6 +71,7 @@ def update_person_page_rank(page_id, ranks, found_datetime, db=connect):
         SELECT = 'select id, rank from person_page_rank where PageID=%s and PersonID=%s and Scan_date_datetime=%s'
         UPDATE = 'update person_page_rank set Rank=%s where ID=%s'
         INSERT = 'insert into person_page_rank (PageID, PersonID, Rank, Scan_date_datetime) values (%s, %s, %s, %s)'
+        found_datetime = datetime.datetime.now()
         db = MySQLdb.connect(**settings.DB)
         for person_id, rank in ranks.items():
             if rank > 0:
@@ -93,6 +94,7 @@ def update_person_page_rank(page_id, ranks, found_datetime, db=connect):
 
 
 def update_last_scan_date(page_id, db=connect):
+    logging.info('update_last_scan_date %s' % page_id)
     db = MySQLdb.connect(**settings.DB)
     with db.cursor() as c:
         logging.debug('update_last_scan_date: update pages set LastScanDate=%s where ID=%s' % (datetime.datetime.now(), page_id))
@@ -108,7 +110,7 @@ def get_pages_rows(last_scan_date=None, max_limit=0, db=connect):
     SELECT = 'select p.id, p.Url, p.SiteID, s.Name, p.FoundDateTime '\
              'from pages p '\
              'join sites s on (s.ID=p.SiteID)'
-    LIMIT = ' LIMIT %s' % max_limit if max_limit > 0 else ''
+    LIMIT = (' LIMIT %s' % max_limit) if max_limit > 0 else ''
     if last_scan_date is None:
         WHERE = 'where p.LastScanDate is null'
     else:
@@ -116,13 +118,18 @@ def get_pages_rows(last_scan_date=None, max_limit=0, db=connect):
 
     query = ' '.join([SELECT, WHERE, LIMIT])
 
+    rows = 0
+    pages = ()
+    db = MySQLdb.connect(**settings.DB)
     with db.cursor() as c:
         c.execute(query, (last_scan_date))
         for page in c.fetchall():
+            rows += 1
             yield page
-
+        # c.close()
     db.close()
-    # return pages
+    logging.info('get_pages_rows complete %s rows' % rows)
+    return pages
 
 
 def _add_urls(pages_data, page_id=None, page_type_html=False, db=connect):

@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 import datetime
 from io import BytesIO
-from multiprocessing import Pool, BoundedSemaphore, Semaphore
+from multiprocessing import Pool #, BoundedSemaphore, Semaphore, active_children
+from threading import Semaphore
 import urllib.request
 # import asyncio
 import re
@@ -9,7 +10,7 @@ import gzip
 import time
 import lxml
 import logging
-import log
+# import log
 import settings
 import sitemap
 import parsers
@@ -19,7 +20,7 @@ import robots
 
 
 def _get_content(url, timeout=60):
-    logging.info('_get_content: %s loading ...' % url)
+    # logging.info('_get_content: %s loading ...' % url)
     try:
         rd = urllib.request.urlopen(url, timeout=timeout)
     except Exception as e:
@@ -35,7 +36,7 @@ def _get_content(url, timeout=60):
     else:
         content = rd.read().decode()
 
-    logging.info('_get_content: %s loaded ...%s bytes' % (url, len(content)))
+    # logging.info('_get_content: %s loaded ...%s bytes' % (url, len(content)))
     return content
 
 
@@ -68,7 +69,7 @@ def scan(next_step=False, max_limit=0):
     urls_limits = {}
 
     def get_content_error(*error):
-        print('get_content_error: %s' % error)
+        logging.info('get_content_error: %s' % error)
 
     def get_content_complete(*args):
         content, page, robots = args[0]
@@ -77,18 +78,20 @@ def scan(next_step=False, max_limit=0):
         if site_id not in urls_limits.keys():
             urls_limits[site_id] = 0
         urls_limits[site_id] += 1
-        # print('get_content_complete: %s/%s' % (urls_limits[site_id], max_limit), page)
+        logging.info('get_content_complete: %s/%s %s', urls_limits[site_id], max_limit, page)
         if (max_limit == 0) or (urls_limits[site_id] < max_limit):
-            logging.info('get_content_complete: %s/%s %s' % (urls_limits[site_id], max_limit, page))
+            # logging.info('get_content_complete: %s/%s %s' % (urls_limits[site_id], max_limit, page))
             # robots = all_robots.get(site_id)
             with pool_sem:
+                logging.info('get_content_complete: adding sitemap.scan_urls %s', page)
                 """Сканирование на наличие url'ов"""
                 pool.apply_async(sitemap.scan_urls, (content, page, robots,),
                                  callback=scan_page_complete,
                                  error_callback=scan_page_error)
+                logging.info('get_content_complete: added sitemap.scan_urls %s', page)
             if page_type == parsers.SM_TYPE_HTML:
-                """Сканирование keywords"""
                 with pool_sem:
+                    """Сканирование keywords"""
                     pool.apply_async(parsers.process_ranks,
                                      (content, page_id, keywords, found_datetime),
                                      callback=process_ranks_complete,
@@ -105,14 +108,17 @@ def scan(next_step=False, max_limit=0):
     def scan_page_complete(*args):
         new_pages_data, page_id, page_type = args[0]
         logging.info('scan_page_complete: %s %s %s' % (page_id, len(new_pages_data), page_type))
-        for r in range(0, len(new_pages_data), settings.CHUNK_SIZE):
+        # for r in range(0, len(new_pages_data), settings.CHUNK_SIZE):
+        for r in range(0, max_limit if max_limit > 0 else len(new_pages_data), settings.CHUNK_SIZE):
+            # logging.info('scan_page_complete: %s', new_pages_data[r:r+(max_limit if max_limit > 0 else settings.CHUNK_SIZE)])
             with pool_sem:
                 pool.apply_async(database.add_urls,
-                                 (new_pages_data[r:r+settings.CHUNK_SIZE],
-                                  page_id,
-                                  page_type,),
+                                 (new_pages_data[r:r+(max_limit if max_limit > 0 else settings.CHUNK_SIZE)],
+                                 page_id,
+                                 page_type,),
                                  callback=add_urls_complete,
                                  error_callback=add_urls_error)
+
         '''
         with pool_sem:
             pool.apply_async(database.add_urls,
@@ -125,7 +131,8 @@ def scan(next_step=False, max_limit=0):
     def add_urls_complete(*args):
         rows, page_id = args[0]
         logging.info('add_urls_complete: %s %s' % (rows, page_id))
-        database.update_last_scan_date(page_id)
+        if rows > 0:
+            database.update_last_scan_date(page_id)
 
     def add_urls_error(*error):
         logging.error('add_urls_error: %s' % error)
@@ -137,8 +144,9 @@ def scan(next_step=False, max_limit=0):
     global pool
     pool = Pool(settings.POOL_SIZE)
     global pool_sem
-    # pool_sem = BoundedSemaphore()
-    pool_sem = Semaphore(settings.POOL_SIZE * 2)
+    # pool_sem = BoundedSemaphore(settings.POOL_SIZE * 2)
+    pool._taskqueue._maxsize = settings.POOL_SIZE * 2
+    pool_sem = pool._taskqueue._sem = Semaphore(settings.POOL_SIZE * 2)
     # pool._taskqueue.maxsize = settings.POOL_SIZE * 2
 
     database.add_robots()
@@ -152,22 +160,25 @@ def scan(next_step=False, max_limit=0):
     for page in database.get_pages_rows(max_limit=max_limit):
         with pool_sem:
             add_urls_total += 1
-            print('scan.pool:', pool_sem.get_value())
             pool.apply_async(get_content, (page, all_robots),
                              callback=get_content_complete,
                              error_callback=get_content_error)
-            # print('scan.pool_size:', pool._taskqueue.qsize())
+            logging.info('page_added: %s %s', len(pool._cache), page)
+            time.sleep(len(pool._cache) // settings.POOL_SIZE + 1)
 
     close_pool_wait(add_urls_total)
     logging.info('Crawler.scan: Add %s new urls on date %s' % (add_urls_total, 'NULL'))
-    return add_urls_total
+    return close_pool_wait(add_urls_total)
 
 
 def close_pool_wait(add_urls_total):
     # print(pool_sem.get_value())
-    while True:
+    count = 0
+    while len(pool._cache) > 0:
         # Ожидание опустошения пула
+        logging.info('close_pool_wait: %s %s', count, len(pool._cache))
+        count = max(count, max(pool._cache if pool._cache else [0, ]))
         time.sleep(1)
-        print('pool.qsize:', pool_sem.get_value())
     pool.close()
     pool.join()
+    return count
