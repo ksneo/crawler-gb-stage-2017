@@ -104,7 +104,7 @@ def update_last_scan_date(page_id, db=connect):
 
 
 def get_pages_rows(last_scan_date=None, max_limit=0, db=connect):
-    # db = settings.DB
+
     SELECT = 'select p.id, p.Url, p.SiteID, s.Name, p.FoundDateTime '\
              'from pages p '\
              'join sites s on (s.ID=p.SiteID)'
@@ -122,10 +122,14 @@ def get_pages_rows(last_scan_date=None, max_limit=0, db=connect):
             yield page
 
     db.close()
-    # return pages
 
 
-def _add_urls(pages_data, page_id=None, page_type_html=False, db=connect):
+
+def add_urls(pages_data, db=connect):
+    """
+        pages_data - dict(site_id, url, found_date_time, last_scan_date)
+        добавляет url в таблицу pages если такой ссылки нет
+    """
     logging.info('add_urls inserting %s' % len(pages_data))
     db = MySQLdb.connect(**settings.DB)
     # print('_add_urls:', pages_data)
@@ -154,15 +158,9 @@ def _add_urls(pages_data, page_id=None, page_type_html=False, db=connect):
     db.commit()
     '''
     db.close()
-    # if page_type_html and page_id:
-    #     update_last_scan_date(page_id)
-    # print('_add_urls %s completed...' % rows)
-    return rows, page_id
+    return rows
 
 
-def add_urls(pages_data, page_id=None, page_type_html=False, db=connect):
-    """
-        pages_data - dict(site_id, url, found_date_time, last_scan_date)
-        добавляет url в таблицу pages если такой ссылки нет
-    """
-    return _add_urls(pages_data, page_id, page_type_html, db)
+def add_urls_mp(pages_data, page_id=None, page_type_html=False, db=connect):
+    rows = add_urls(pages_data, db)
+    return rows, page_id, page_type_html, db

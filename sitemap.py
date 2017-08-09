@@ -129,23 +129,6 @@ def _filter_robots(urls, robots):
 def _filter_domain(urls, base_url):
     return [url for url in urls if url.startswith(base_url)]
 
-'''
-def add_urls(urls, page, page_type):
-    # def urls_added():
-    #     if page_type != SM_TYPE_HTML:
-    #         db.update_last_scan_date(page_id)
-
-    page_id, page_url, site_id, base_url = page
-    new_pages_data = [{
-        'site_id': site_id,
-        'url': url,
-        'found_date_time': datetime.datetime.now(),
-        'last_scan_date': None
-        } for url in urls]
-    # .pool.apply_async(db.add_urls, (new_pages_data, page_id, page_type != SM_TYPE_HTML),)
-    return new_pages_data, page_id, page_type != SM_TYPE_HTML
- '''
-
 
 def scan_urls(content, page, robots):
     """
@@ -171,4 +154,4 @@ def scan_urls(content, page, robots):
         'last_scan_date': None
         } for url in urls]
     # return add_urls(urls, page, page_type)
-    return new_pages_data, page_id, page_type == SM_TYPE_HTML
+    return new_pages_data, page_id, page_type

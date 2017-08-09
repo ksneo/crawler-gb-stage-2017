@@ -39,7 +39,7 @@ def _get_content(url, timeout=60):
     return content
 
 
-def get_content(page, all_robots, timeout=60):
+def _get_content_mp(page, all_robots, timeout=60):
     logging.info('get_content: %s' % (page,))
     page_id, url, site_id, base_url, found_datetime = page
     content = _get_content(url, timeout)
@@ -49,22 +49,58 @@ def get_content(page, all_robots, timeout=60):
     return content, page, urls
 
 
-'''
-def scan_page(page, all_robots):
-    logging.error('scan_page:', page, all_robots)
-    page_id, url, site_id, base_url = page
-    # request_time = time.time()
-    logging.info('#BEGIN %s url %s, base_url %s', page_id, url, base_url)
-
-    content = _get_content(url)
-
-    all_robots = all_robots.get(site_id)
-
-    return sitemap.scan_urls(content, page, all_robots)
- '''
+def _init_crawler():
+    database.add_robots()
+    all_robots = robots.process_robots(database.get_robots())
+    keywords = database.load_persons()
+    return keywords, all_robots
 
 
 def scan(next_step=False, max_limit=0):
+    if settings.MULTI_PROCESS:
+        result = scan_mp(next_step, max_limit)
+    else:
+        result = scan_sp(next_step, max_limit)
+    return result
+
+def scan_sp(next_step=False, max_limit=0):
+    keywords, all_robots = _init_crawler()
+    pages = database.get_pages_rows(None)
+    # TODO: добавить проверку если len(pages) = 0 то найти наименьшую дату и выбрать по ней.
+    add_urls_total = 0
+    # print('Crawler.scan: pages=%s' % len(pages))
+    for page in pages:
+        page_id, url, site_id, base_url, found_datetime = page
+        request_time = time.time()
+        logging.info('#BEGIN %s url %s, base_url %s', page_id, url, base_url)
+        content = _get_content(url)
+        robots = all_robots.get(site_id)
+
+        if add_urls_total >= max_limit:
+            page_type = sitemap.get_file_type(content)
+            add_urls_count = 0
+        else:
+            new_pages_data, page_id, page_type = sitemap.scan_urls(content, page, robots)
+            if len(new_pages_data) > max_limit:
+                new_pages_data = new_pages_data[:max_limit + 1]
+            add_urls_count = database.add_urls(new_pages_data)
+            if page_type != sitemap.SM_TYPE_HTML:
+                database.update_last_scan_date(page_id)
+
+        if page_type == sitemap.SM_TYPE_HTML:
+            ranks, page_id, found_datetime = parsers.process_ranks(content, page_id, keywords, found_datetime)
+            database.update_person_page_rank(page_id, ranks, found_datetime)
+
+        request_time = time.time() - request_time
+        logging.info('#END url %s, base_url %s, add urls %s, time %s',
+                        url, base_url, add_urls_count, request_time)
+        add_urls_total = add_urls_total + add_urls_count
+
+    logging.info('Crawler.scan: Add %s new urls on date %s', add_urls_total, 'NULL')
+    return add_urls_total
+
+
+def scan_mp(next_step=False, max_limit=0):
     urls_limits = {}
 
     def get_content_error(*error):
@@ -107,20 +143,12 @@ def scan(next_step=False, max_limit=0):
         logging.info('scan_page_complete: %s %s %s' % (page_id, len(new_pages_data), page_type))
         for r in range(0, len(new_pages_data), settings.CHUNK_SIZE):
             with pool_sem:
-                pool.apply_async(database.add_urls,
+                pool.apply_async(database.add_urls_mp,
                                  (new_pages_data[r:r+settings.CHUNK_SIZE],
                                   page_id,
-                                  page_type,),
+                                  page_type==sitemap.SM_TYPE_HTML,),
                                  callback=add_urls_complete,
                                  error_callback=add_urls_error)
-        '''
-        with pool_sem:
-            pool.apply_async(database.add_urls,
-                             (new_pages_data,
-                              page_id, page_type,),
-                             callback=add_urls_complete,
-                             error_callback=add_urls_error)
-        '''
 
     def add_urls_complete(*args):
         rows, page_id = args[0]
@@ -141,9 +169,7 @@ def scan(next_step=False, max_limit=0):
     pool_sem = Semaphore(settings.POOL_SIZE * 2)
     # pool._taskqueue.maxsize = settings.POOL_SIZE * 2
 
-    database.add_robots()
-    all_robots = robots.process_robots(database.get_robots())
-    keywords = database.load_persons()
+    keywords, all_robots = _init_crawler()
 
     # TODO: добавить проверку если len(pages) = 0 то найти наименьшую дату и выбрать по ней.
     # print('Crawler.scan: pages=%s' % len(pages))
@@ -153,7 +179,7 @@ def scan(next_step=False, max_limit=0):
         with pool_sem:
             add_urls_total += 1
             print('scan.pool:', pool_sem.get_value())
-            pool.apply_async(get_content, (page, all_robots),
+            pool.apply_async(_get_content_mp, (page, all_robots),
                              callback=get_content_complete,
                              error_callback=get_content_error)
             # print('scan.pool_size:', pool._taskqueue.qsize())
