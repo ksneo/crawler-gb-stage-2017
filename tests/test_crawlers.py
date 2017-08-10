@@ -19,18 +19,18 @@ def describe_crawlers_module():
             assert isinstance(robots[1], RobotsTxt)
 
         #@pytest.mark.skip(reason="no way of currently testing this")
-        def it_method_scan_urls_return_add_urls_count():
+        def it_method_scan_urls_return_add_urls_count(test_db):
             settings.MULTI_PROCESS = False
             result = crawler.scan(max_limit=300)
-            assert result[0] > 0
+            assert result > 0
 
         @pytest.mark.skip(reason="very long operation 54s")
         def it_method_scan_urls_return_add_urls_count_50000():
             result = crawler.scan(max_limit=50000)
-            assert result[0] > 50000
+            assert result > 50000
 
         @pytest.mark.skip(reason="very long operation 54s")
         def it_method_scan_urls_return_add_urls_count_html():
             result = crawler.scan(max_limit=50000)
-            assert result[0] == 51770
+            assert result == 51770
 

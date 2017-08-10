@@ -24,16 +24,20 @@ def _get_content(url, timeout=60):
         rd = urllib.request.urlopen(url, timeout=timeout)
     except Exception as e:
         logging.error('_get_content (%s) exception %s' % (url, e))
-        return ""
-
-    content = ""
-    if url.strip().endswith('.gz'):
-        mem = BytesIO(rd.read())
-        mem.seek(0)
-        f = gzip.GzipFile(fileobj=mem, mode='rb')
-        content = f.read().decode()
-    else:
-        content = rd.read().decode()
+        return ''
+    charset = rd.headers.get_content_charset('utf-8') 
+    logging.debug('_get_content: charset %s', charset) 
+    content = ''
+    try:
+        if url.strip().endswith('.gz'):
+            mem = BytesIO(rd.read())
+            mem.seek(0)
+            f = gzip.GzipFile(fileobj=mem, mode='rb')
+            content = f.read().decode()
+        else:
+            content = rd.read().decode(charset)
+    except UnicodeDecodeError as e:
+        logging.error('_get_content: url = %s, charset = %s, error = %s', url, charset, e)
 
     logging.info('_get_content: %s loaded ...%s bytes' % (url, len(content)))
     return content
