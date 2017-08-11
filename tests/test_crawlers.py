@@ -55,11 +55,11 @@ def describe_crawlers_module():
             result = crawler.scan(max_limit=50000)
             database.close()
             assert result == 51770
-        @pytest.mark.skip(reason="wait improve close crawler")
+        # @pytest.mark.skip(reason="wait improve close crawler")
         def it_method_scan_urls_return_add_urls_count_multi():
             database.get_connect = get_connect
             settings.MULTI_PROCESS = True
             database.connect(settings.TEST_DATABASE)
-            result = crawler.scan(max_limit=300)
+            result = crawler.scan(max_limit=5)
             database.close()
             assert result > 0

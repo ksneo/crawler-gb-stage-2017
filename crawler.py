@@ -49,7 +49,7 @@ def _get_content_mp(page, all_robots, timeout=60):
     content = _get_content(url, timeout)
     robots = all_robots.get(site_id)
     # TODO: Выяснить тип контента
-    logging.info('get_content: %s %s' % ((page,), (urls,)))
+    logging.info('get_content: %s %s' % ((page,), (robots,)))
     return content, page, robots
 
 
@@ -117,15 +117,17 @@ def scan_mp(next_step=False, max_limit=0):
         if site_id not in urls_limits.keys():
             urls_limits[site_id] = 0
         urls_limits[site_id] += 1
-        # print('get_content_complete: %s/%s' % (urls_limits[site_id], max_limit), page)
+        logging.info('get_content_complete: %s/%s %s', urls_limits[site_id], max_limit, page)
         if (max_limit == 0) or (urls_limits[site_id] < max_limit):
-            logging.info('get_content_complete: %s/%s %s' % (urls_limits[site_id], max_limit, page))
+            # logging.info('get_content_complete: %s/%s %s' % (urls_limits[site_id], max_limit, page))
             # robots = all_robots.get(site_id)
             with pool_sem:
+                logging.info('get_content_complete: adding sitemap.scan_urls %s', page)
                 """Сканирование на наличие url'ов"""
                 pool.apply_async(sitemap.scan_urls, (content, page, robots,),
                                  callback=scan_page_complete,
                                  error_callback=scan_page_error)
+                logging.info('get_content_complete: added sitemap.scan_urls %s', page)
             if page_type == parsers.SM_TYPE_HTML:
                 """Сканирование keywords"""
                 with pool_sem:
@@ -146,11 +148,12 @@ def scan_mp(next_step=False, max_limit=0):
     def scan_page_complete(*args):
         new_pages_data, page_id, page_type = args[0]
         logging.info('scan_page_complete: %s %s %s' % (page_id, len(new_pages_data), page_type))
-        for r in range(0, len(new_pages_data), settings.CHUNK_SIZE):
+        # for r in range(0, len(new_pages_data), settings.CHUNK_SIZE):
+        for r in range(0, max_limit if max_limit > 0 else len(new_pages_data), settings.CHUNK_SIZE):
             dbconn = database.get_connect()
             with pool_sem:
                 pool.apply_async(database.add_urls_mp,
-                                 (new_pages_data[r:r+settings.CHUNK_SIZE],
+                                 (new_pages_data[r:r+(max_limit if max_limit > 0 else settings.CHUNK_SIZE)],
                                   page_id,
                                   page_type==sitemap.SM_TYPE_HTML,
                                   dbconn),
@@ -160,7 +163,8 @@ def scan_mp(next_step=False, max_limit=0):
     def add_urls_complete(*args):
         rows, page_id, page_type_html, dbconn = args[0]
         logging.info('add_urls_complete: %s %s' % (rows, page_id))
-        database.update_last_scan_date(page_id, dbconn)
+        if rows > 0:
+            database.update_last_scan_date(page_id, dbconn)
         dbconn.close()
 
     def add_urls_error(*error):
@@ -175,12 +179,13 @@ def scan_mp(next_step=False, max_limit=0):
     global pool
     pool = Pool(settings.POOL_SIZE)
     global pool_sem
-    # pool_sem = BoundedSemaphore()
-    pool_sem = Semaphore(settings.POOL_SIZE * 2)
+    # pool_sem = BoundedSemaphore(settings.POOL_SIZE * 2)
+    pool._taskqueue._maxsize = settings.POOL_SIZE * 2
+    pool_sem = pool._taskqueue._sem = Semaphore(settings.POOL_SIZE * 2)
     # pool._taskqueue.maxsize = settings.POOL_SIZE * 2
 
     keywords, all_robots = _init_crawler()
-
+    url_limits = {"1": "50", "2": "50"}
     # TODO: добавить проверку если len(pages) = 0 то найти наименьшую дату и выбрать по ней.
     # print('Crawler.scan: pages=%s' % len(pages))
     add_urls_total = 0
@@ -188,22 +193,25 @@ def scan_mp(next_step=False, max_limit=0):
     for page in database.get_pages_rows(max_limit=max_limit):
         with pool_sem:
             add_urls_total += 1
-            print('scan.pool:', pool_sem.get_value())
             pool.apply_async(_get_content_mp, (page, all_robots),
                              callback=get_content_complete,
                              error_callback=get_content_error)
-            # print('scan.pool_size:', pool._taskqueue.qsize())
+            logging.info('page_added: %s %s', len(pool._cache), page)
+            time.sleep(len(pool._cache) // settings.POOL_SIZE + 1)
 
     close_pool_wait(add_urls_total)
     logging.info('Crawler.scan: Add %s new urls on date %s' % (add_urls_total, 'NULL'))
-    return add_urls_total
+    return close_pool_wait(add_urls_total)
 
 
 def close_pool_wait(add_urls_total):
     # print(pool_sem.get_value())
-    while True:
+    count = 0
+    while len(pool._cache) > 0:
         # Ожидание опустошения пула
+        logging.info('close_pool_wait: %s %s', count, len(pool._cache))
+        count = max(count, max(pool._cache if pool._cache else [0, ]))
         time.sleep(1)
-        print('pool.qsize:', pool_sem.get_value())
     pool.close()
     pool.join()
+    return count
