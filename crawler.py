@@ -25,8 +25,8 @@ def _get_content(url, timeout=60):
     except Exception as e:
         logging.error('_get_content (%s) exception %s' % (url, e))
         return ''
-    charset = rd.headers.get_content_charset('utf-8') 
-    logging.debug('_get_content: charset %s', charset) 
+    charset = rd.headers.get_content_charset('utf-8')
+    logging.debug('_get_content: charset %s', charset)
     content = ''
     try:
         if url.strip().endswith('.gz'):

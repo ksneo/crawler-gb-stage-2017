@@ -25,14 +25,9 @@ def executeScriptsFromFile(filename, db):
             logging.error("Command skipped: %s", msg)
     c.close()
 
-@pytest.fixture
-def test_db():
-    database.connect = MySQLdb.connect(**settings.TEST_DATABASE)
-    return database.connect
 
 def clean_test_db():
-    database.connect = MySQLdb.connect(**settings.TEST_DATABASE)
-    db = database.connect
+    db = MySQLdb.connect(**settings.TEST_DATABASE)
     executeScriptsFromFile("./sql/db_init_mysql.sql", db)
     executeScriptsFromFile("./sql/db_load_sites.sql", db)
     executeScriptsFromFile("./sql/db_load_persons.sql", db)

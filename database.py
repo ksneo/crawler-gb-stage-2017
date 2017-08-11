@@ -3,10 +3,25 @@ import logging
 import settings
 import MySQLdb
 
-connect = MySQLdb.connect(**settings.DATABASE)
+connection = None
 
 
-def load_persons(db=connect):
+def connect(conn_settings=settings.DATABASE):
+    global connection
+    connection = MySQLdb.connect(**conn_settings)
+    return connection
+
+
+def close():
+    connection.close()
+
+
+def get_connect(conn_settings=settings.DATABASE):
+    return MySQLdb.connect(**conn_settings)
+
+
+def load_persons(db=None):
+    db = db or connection
     with db.cursor() as c:
         SELECT = 'select distinct Name, PersonID from keywords'
         c.execute(SELECT)
@@ -21,7 +36,8 @@ def load_persons(db=connect):
     return keywords
 
 
-def get_robots(db=connect):
+def get_robots(db=None):
+    db = db or connection
     SELECT = ('SELECT p.ID, p.Url, p.SiteID, s.Name FROM pages p '
               'JOIN sites s ON (s.ID=p.SiteID) '
               'WHERE p.Url like "%/robots.txt"')
@@ -31,8 +47,9 @@ def get_robots(db=connect):
             yield row
 
 
-def add_robots(db=connect):
+def add_robots(db=None):
     """ Добавляет в pages ссылки на robots.txt, если их нет для определенных сайтов  """
+    db = db or connection
     new_sites = _not_have_pages()
     # ARGS = [(r[1], '%s/robots.txt' % r[0], None, datetime.datetime.now(), hashlib.md5(('%s/robots.txt' % r[0]).encode()).hexdigest()) for r in new_sites]
     print('add_robots:', new_sites)
@@ -47,8 +64,9 @@ def add_robots(db=connect):
     return _add_robots
 
 
-def _not_have_pages(db=connect):
+def _not_have_pages(db=None):
     """ Возвращает rows([site_name, site_id]) у которых нет страниц"""
+    db = db or connection
     with db.cursor() as c:
         c.execute('select s.Name, s.ID '
                     'from sites s '
@@ -59,7 +77,8 @@ def _not_have_pages(db=connect):
     return rows
 
 
-def update_person_page_rank(page_id, ranks, found_datetime, db=connect):
+def update_person_page_rank(page_id, ranks, found_datetime, db=None):
+    db = db or connection
     if ranks:
         logging.debug('update_person_page_rank: %s %s', page_id, ranks)
         SELECT = 'select id, rank from person_page_rank where PageID=%s and PersonID=%s and Scan_date_datetime=%s'
@@ -85,7 +104,8 @@ def update_person_page_rank(page_id, ranks, found_datetime, db=connect):
                     db.commit()
 
 
-def update_last_scan_date(page_id, db=connect):
+def update_last_scan_date(page_id, db=None):
+    db = db or connection
     with db.cursor() as c:
         logging.debug('update_last_scan_date: update pages set LastScanDate=%s where ID=%s' % (datetime.datetime.now(), page_id))
         c.execute('update pages set LastScanDate=%s where ID=%s',
@@ -94,8 +114,8 @@ def update_last_scan_date(page_id, db=connect):
         db.commit()
 
 
-def get_pages_rows(last_scan_date=None, max_limit=0, db=connect):
-
+def get_pages_rows(last_scan_date=None, max_limit=0, db=None):
+    db = db or connection
     SELECT = 'select p.id, p.Url, p.SiteID, s.Name, p.FoundDateTime '\
              'from pages p '\
              'join sites s on (s.ID=p.SiteID)'
@@ -113,11 +133,12 @@ def get_pages_rows(last_scan_date=None, max_limit=0, db=connect):
             yield page
 
 
-def add_urls(pages_data, db=connect):
+def add_urls(pages_data, db=None):
     """
         pages_data - dict(site_id, url, found_date_time, last_scan_date)
         добавляет url в таблицу pages если такой ссылки нет
     """
+    db = db or connection
     logging.info('add_urls inserting %s' % len(pages_data))
     # print('_add_urls:', pages_data)
 
@@ -147,6 +168,7 @@ def add_urls(pages_data, db=connect):
     return rows
 
 
-def add_urls_mp(pages_data, page_id=None, page_type_html=False, db=connect):
+def add_urls_mp(pages_data, page_id=None, page_type_html=False, db=None):
+    db = db or connection
     rows = add_urls(pages_data, db)
     return rows, page_id, page_type_html, db
