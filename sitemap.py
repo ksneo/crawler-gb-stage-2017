@@ -6,7 +6,7 @@ import re
 import logging
 import datetime
 from log import log_with
-import database as db
+# import database as db
 
 
 SM_TYPE_XML = 0
@@ -16,7 +16,7 @@ SM_TYPE_REC = 3 # рекурсивный sitemap содержит ссылки �
 
 
 def _esc_amp(text):
-    """ text строка, возвращает строку с замененными & """ 
+    """ text строка, возвращает строку с замененными & """
     # замена & на &amp;
     return re.sub(r'&(?!amp;)', r'&amp;', text, re.MULTILINE)
 
@@ -24,11 +24,13 @@ def _esc_amp(text):
 def _get_nsless_xml(xml):
     """ xml - bytes[], возращает root ETreeElement """
     # убираем namespaces из xml
-    it = etree.iterparse(xml) # it = etree.iterparse(xml, recover=True) если хотим чтобы не падало на неправильных xml
+    it = etree.iterparse(xml)
+    # it = etree.iterparse(xml, recover=True) если хотим чтобы не падало на неправильных xml
     for _, el in it:
         if '}' in el.tag:
             el.tag = el.tag.split('}', 1)[1]  # strip all namespaces
-        for at in el.attrib.keys(): # strip namespaces of attributes too
+        for at in el.attrib.keys():
+            # strip namespaces of attributes too
             if '}' in at:
                 newat = at.split('}', 1)[1]
                 el.attrib[newat] = el.attrib[at]
@@ -40,7 +42,7 @@ def get_file_type(sitemap):
     xml_pattern = "<urlset"
     html_pattern = "<!DOCTYPE"
     rec_pattern = "<sitemapindex"
-    
+
     if sitemap.find(xml_pattern) >= 0:
         return SM_TYPE_XML
     elif sitemap.find(html_pattern) >= 0:
@@ -128,20 +130,6 @@ def _filter_domain(urls, base_url):
     return [url for url in urls if url.startswith(base_url)]
 
 
-def add_urls(urls, page, page_type):
-    page_id, page_url, site_id, base_url = page
-    new_pages_data = [{
-        'site_id': site_id,
-        'url': url,
-        'found_date_time': datetime.datetime.now(),
-        'last_scan_date': None
-        } for url in urls]
-    urls_count = db.add_urls(new_pages_data)
-    if page_type != SM_TYPE_HTML:
-        db.update_last_scan_date(page_id)
-    return urls_count
-
-#@log_with
 def scan_urls(content, page, robots):
     """
         content - содержимое сайтмэпа или html str,
@@ -149,13 +137,21 @@ def scan_urls(content, page, robots):
         robots - класс с парсером robots.txt
         возвращает tuple c типом контента и списком ссылок
     """
-    page_id, page_url, site_id, base_url = page
+    logging.info('sitemap.scan_urls: %s %s' % (page, robots))
+    page_id, page_url, site_id, base_url, found_datetime = page
     page_type = get_file_type(content)
     urls = _get_urls(content, base_url, page_type)
 
-    # удаляем пустые
-    urls = [url for url in urls if url]
+    # удаляем пустые и оставляем уникальные
+    urls = list({url for url in urls if url})
+
     urls = _filter_domain(urls, base_url)
     urls = _filter_robots(urls, robots)
-    urls_count = add_urls(urls, page, page_type)
-    return (page_type, urls_count)
+    new_pages_data = [{
+        'site_id': site_id,
+        'url': url,
+        'found_date_time': datetime.datetime.now(),
+        'last_scan_date': None
+        } for url in urls]
+    # return add_urls(urls, page, page_type)
+    return new_pages_data, page_id, page_type

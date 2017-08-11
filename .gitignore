@@ -102,3 +102,4 @@ ENV/
 .idea/
 .vscode/
 activate_venv\.bat
+*.py_
