@@ -84,7 +84,7 @@ def update_person_page_rank(page_id, ranks, found_datetime, db=None):
         SELECT = 'select id, rank from person_page_rank where PageID=%s and PersonID=%s and Scan_date_datetime=%s'
         UPDATE = 'update person_page_rank set Rank=%s where ID=%s'
         INSERT = 'insert into person_page_rank (PageID, PersonID, Rank, Scan_date_datetime) values (%s, %s, %s, %s)'
-
+        found_datetime = datetime.datetime.now()
         for person_id, rank in ranks.items():
             if rank > 0:
                 # Реализация INSERT OR UPDATE, т.к. кое кто отказался добавить UNIQUE_KEY :)
@@ -119,7 +119,7 @@ def get_pages_rows(last_scan_date=None, max_limit=0, db=None):
     SELECT = 'select p.id, p.Url, p.SiteID, s.Name, p.FoundDateTime '\
              'from pages p '\
              'join sites s on (s.ID=p.SiteID)'
-    LIMIT = ' LIMIT %s' % max_limit if max_limit > 0 else ''
+    LIMIT = (' LIMIT %s' % max_limit) if max_limit > 0 else ''
     if last_scan_date is None:
         WHERE = 'where p.LastScanDate is null'
     else:

@@ -7,6 +7,10 @@ import crawler
 from robots import RobotsTxt
 from database import get_pages_rows, add_robots, connect
 
+
+def get_connect(conn_settings=settings.TEST_DATABASE):
+    return MySQLdb.connect(**conn_settings)
+
 def setup_module(module):
     clean_test_db()
 
@@ -46,6 +50,16 @@ def describe_crawlers_module():
 
         @pytest.mark.skip(reason="very long operation 54s")
         def it_method_scan_urls_return_add_urls_count_html():
+            settings.MULTI_PROCESS = False
+            database.connect(settings.TEST_DATABASE)
             result = crawler.scan(max_limit=50000)
+            database.close()
             assert result == 51770
 
+        def it_method_scan_urls_return_add_urls_count_multi():
+            database.get_connect = get_connect
+            settings.MULTI_PROCESS = True
+            database.connect(settings.TEST_DATABASE)
+            result = crawler.scan(max_limit=300)
+            database.close()
+            assert result > 0

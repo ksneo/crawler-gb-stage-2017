@@ -47,10 +47,10 @@ def _get_content_mp(page, all_robots, timeout=60):
     logging.info('get_content: %s' % (page,))
     page_id, url, site_id, base_url, found_datetime = page
     content = _get_content(url, timeout)
-    urls = all_robots.get(site_id).sitemaps
+    robots = all_robots.get(site_id)
     # TODO: Выяснить тип контента
     logging.info('get_content: %s %s' % ((page,), (urls,)))
-    return content, page, urls
+    return content, page, robots
 
 
 def _init_crawler():
@@ -137,7 +137,8 @@ def scan_mp(next_step=False, max_limit=0):
     def process_ranks_complete(*args):
         ranks, page_id, found_datetime = args[0]
         logging.info('process_ranks_complete: %s %s' % (ranks, page_id))
-        database.update_person_page_rank(page_id, ranks, found_datetime)
+        with database.get_connect() as dbconn:
+            database.update_person_page_rank(page_id, ranks, found_datetime, dbconn)
 
     def process_ranks_error(*error):
         logging.error('process_ranks_error: %s' % error)
@@ -146,22 +147,27 @@ def scan_mp(next_step=False, max_limit=0):
         new_pages_data, page_id, page_type = args[0]
         logging.info('scan_page_complete: %s %s %s' % (page_id, len(new_pages_data), page_type))
         for r in range(0, len(new_pages_data), settings.CHUNK_SIZE):
+            dbconn = database.get_connect()
             with pool_sem:
                 pool.apply_async(database.add_urls_mp,
                                  (new_pages_data[r:r+settings.CHUNK_SIZE],
                                   page_id,
-                                  page_type==sitemap.SM_TYPE_HTML,),
+                                  page_type==sitemap.SM_TYPE_HTML,
+                                  dbconn),
                                  callback=add_urls_complete,
                                  error_callback=add_urls_error)
 
     def add_urls_complete(*args):
-        rows, page_id = args[0]
+        rows, page_id, page_type_html, dbconn = args[0]
         logging.info('add_urls_complete: %s %s' % (rows, page_id))
-        database.update_last_scan_date(page_id)
+        database.update_last_scan_date(page_id, dbconn)
+        dbconn.close()
 
     def add_urls_error(*error):
         logging.error('add_urls_error: %s' % error)
         # TODO: Поставить сбойнувший CHUNK в очередь
+        # TODO: Посмотреть что сюда передается и можно ли здесь закрыть соединение
+        # или все таки закрывать соединение в самой функции
 
     def scan_page_error(*error):
         logging.error('scan_page_error: %s' % error)
