@@ -80,7 +80,7 @@ def _not_have_pages(db=None):
 def update_person_page_rank(page_id, ranks, found_datetime, db=None):
     db = db or connection
     if ranks:
-        logging.debug('update_person_page_rank: %s %s', page_id, ranks)
+        #logging.debug('update_person_page_rank: %s %s', page_id, ranks)
         SELECT = 'select id, rank from person_page_rank where PageID=%s and PersonID=%s and Scan_date_datetime=%s'
         UPDATE = 'update person_page_rank set Rank=%s where ID=%s'
         INSERT = 'insert into person_page_rank (PageID, PersonID, Rank, Scan_date_datetime) values (%s, %s, %s, %s)'
@@ -139,7 +139,9 @@ def add_urls(pages_data, db=None):
         добавляет url в таблицу pages если такой ссылки нет
     """
     db = db or connection
-    logging.info('add_urls inserting %s' % len(pages_data))
+    logging.info('add_urls inserting %s', len(pages_data))
+    if pages_data == []:
+        return 0
     # print('_add_urls:', pages_data)
 
     # медленный вариант, но работает без добавления дополнительного поля
@@ -158,17 +160,13 @@ def add_urls(pages_data, db=None):
         c.executemany(INSERT, pages_data)
         rows += c.rowcount
     db.commit()
-    '''
-    for page in pages_data:
-        with db.cursor() as c:
-            c.execute(INSERT, page)
-            rows += c.rowcount
-    db.commit()
-    '''
     return rows
 
 
-def add_urls_mp(pages_data, page_id=None, page_type_html=False, db=None):
-    db = db or connection
-    rows = add_urls(pages_data, db)
-    return rows, page_id, page_type_html, db
+def add_urls_mp(pages_data, page_id=None):
+    rows = 0
+    if pages_data !=[]:
+        db = get_connect()
+        rows = add_urls(pages_data, db)
+        db.close()
+    return rows, page_id
