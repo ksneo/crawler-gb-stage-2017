@@ -121,12 +121,12 @@ def scan_mp(next_step=False, max_limit=0):
         if (max_limit == 0) or (urls_limits[site_id] < max_limit):
             logging.info('get_content_complete: %s/%s %s', urls_limits[site_id], max_limit, page)
             robots = all_robots.get(site_id)
-            # with pool_sem:
-            #     """Сканирование на наличие url'ов"""
-            #     pool.apply_async(sitemap.scan_urls, (content, page, robots,),
-            #                      callback=scan_page_complete,
-            #                      error_callback=scan_page_error)
-            #     logging.info('get_content_complete: added sitemap.scan_urls %s', page)
+            with pool_sem:
+                """Сканирование на наличие url'ов"""
+                pool.apply_async(sitemap.scan_urls, (content, page, robots,),
+                                 callback=scan_page_complete,
+                                 error_callback=scan_page_error)
+                logging.info('get_content_complete: added sitemap.scan_urls %s', page)
             if page_type == parsers.SM_TYPE_HTML:
                 """Сканирование keywords"""
                 with pool_sem:
@@ -153,12 +153,11 @@ def scan_mp(next_step=False, max_limit=0):
         for r in range(0, max_limit if max_limit > 0 else len(new_pages_data), settings.CHUNK_SIZE):
             with pool_sem:
                 test_pages = new_pages_data[r:r+(max_limit if max_limit > 0 else settings.CHUNK_SIZE)]
-                result = pool.apply_async(database.add_urls_mp,
+                pool.apply_async(database.add_urls_mp,
                                  (new_pages_data[r:r+(max_limit if max_limit > 0 else settings.CHUNK_SIZE)],
                                   page_id),
                                  callback=add_urls_complete,
                                  error_callback=add_urls_error)
-                result.wait()
 
     def add_urls_complete(*args):
         rows, page_id = args[0]
