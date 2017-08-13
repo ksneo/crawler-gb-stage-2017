@@ -151,10 +151,11 @@ def scan_mp(next_step=False, max_limit=0):
         logging.info('scan_page_complete: %s %s %s', page_id, len(new_pages_data), page_type)
         # for r in range(0, len(new_pages_data), settings.CHUNK_SIZE):
         # max_pages_limit = max_limit if max_limit > 0 and max_limit < len(new_pages_data) else len(new_pages_data)
-        for r in range(0, max_limit if max_limit > 0 else len(new_pages_data), settings.CHUNK_SIZE if max_limit > settings.CHUNK_SIZE else max_limit):
+        chunk_size = settings.CHUNK_SIZE if max_limit > settings.CHUNK_SIZE else max_limit
+        for r in range(0, max_limit if max_limit > 0 else len(new_pages_data), chunk_size):
             with pool_sem:
                 pool.apply_async(database.add_urls_mp,
-                                 (new_pages_data[r:r + (settings.CHUNK_SIZE if max_limit > settings.CHUNK_SIZE else max_limit)],
+                                 (new_pages_data[r:r + chunk_size],
                                   page_id,),
                                  callback=add_urls_complete,
                                  error_callback=add_urls_error)
