@@ -162,6 +162,7 @@ def add_urls(pages_data, db=None):
         db.commit()
     return rows
 
+
 def add_urls_mp(pages_data, page_id=None, dbsettings=None):
     rows = 0
     if pages_data !=[]:
