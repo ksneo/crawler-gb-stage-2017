@@ -53,8 +53,6 @@ def add_robots(db=None):
     """ Добавляет в pages ссылки на robots.txt, если их нет для определенных сайтов  """
     db = db or connection
     new_sites = _not_have_pages()
-    # ARGS = [(r[1], '%s/robots.txt' % r[0], None, datetime.datetime.now(), hashlib.md5(('%s/robots.txt' % r[0]).encode()).hexdigest()) for r in new_sites]
-    print('add_robots:', new_sites)
     ARGS = [{
             'site_id': r[1],
             'url': '%s/robots.txt' % r[0],

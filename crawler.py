@@ -24,7 +24,7 @@ def _get_content(url, timeout=60):
     try:
         rd = urllib.request.urlopen(url, timeout=timeout)
     except Exception as e:
-        logging.error('_get_content (%s) exception %s' % (url, e))
+        logging.error('_get_content urlopen (%s) exception %s' % (url, e))
         return ''
     charset = rd.headers.get_content_charset('utf-8')
     logging.debug('_get_content: charset %s', charset)
@@ -72,7 +72,6 @@ def scan_sp(next_step=False, max_limit=0):
     pages = database.get_pages_rows(None)
     # TODO: добавить проверку если len(pages) = 0 то найти наименьшую дату и выбрать по ней.
     add_urls_total = 0
-    # print('Crawler.scan: pages=%s' % len(pages))
     for page in pages:
         page_id, url, site_id, base_url, found_datetime = page
         request_time = time.time()
