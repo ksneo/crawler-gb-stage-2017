@@ -10,7 +10,7 @@ import gzip
 import time
 import lxml
 import logging
-#import log
+# import log
 import database
 import settings
 import sitemap
