@@ -11,10 +11,10 @@ import time
 import lxml
 import logging
 #import log
+import database
 import settings
 import sitemap
 import parsers
-import database
 import robots
 # from robots import RobotsTxt
 
@@ -149,13 +149,13 @@ def scan_mp(next_step=False, max_limit=0):
         new_pages_data, page_id, page_type = args[0]
         logging.info('scan_page_complete: %s %s %s', page_id, len(new_pages_data), page_type)
         # for r in range(0, len(new_pages_data), settings.CHUNK_SIZE):
-        test_range = range(0, max_limit if max_limit > 0 else len(new_pages_data), settings.CHUNK_SIZE)
-        for r in range(0, max_limit if max_limit > 0 else len(new_pages_data), settings.CHUNK_SIZE):
+        max_pages_limit = max_limit if max_limit > 0 and max_limit < len(new_pages_data) else len(new_pages_data)
+        for r in range(0, max_pages_limit, settings.CHUNK_SIZE):
             with pool_sem:
-                test_pages = new_pages_data[r:r+(max_limit if max_limit > 0 else settings.CHUNK_SIZE)]
                 pool.apply_async(database.add_urls_mp,
-                                 (new_pages_data[r:r+(max_limit if max_limit > 0 else settings.CHUNK_SIZE)],
-                                  page_id),
+                                 (new_pages_data[r:r + settings.CHUNK_SIZE],
+                                  page_id,
+                                  settings.DB,),
                                  callback=add_urls_complete,
                                  error_callback=add_urls_error)
 
@@ -194,7 +194,7 @@ def scan_mp(next_step=False, max_limit=0):
         #         time.sleep(1)
         with pool_sem:
             add_urls_total += 1
-            pool.apply_async(_get_content_mp, (page, all_robots),
+            pool.apply_async(_get_content_mp, (page, all_robots,),
                              callback=get_content_complete,
                              error_callback=get_content_error)
             #logging.info('page_added: %s %s', len(pool._cache), page)

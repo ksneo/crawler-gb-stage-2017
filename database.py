@@ -6,7 +6,7 @@ import MySQLdb
 connection = None
 
 
-def connect(conn_settings=settings.DATABASE):
+def connect(conn_settings=settings.DB):
     global connection
     connection = MySQLdb.connect(**conn_settings)
     return connection
@@ -16,7 +16,9 @@ def close():
     connection.close()
 
 
-def get_connect(conn_settings=settings.DATABASE):
+def get_connect(conn_settings=None):
+    conn_settings = conn_settings or settings.DB
+    logging.debug("get_connect: connect to %s", conn_settings)
     return MySQLdb.connect(**conn_settings)
 
 
@@ -159,14 +161,13 @@ def add_urls(pages_data, db=None):
     with db.cursor() as c:
         c.executemany(INSERT, pages_data)
         rows += c.rowcount
-    db.commit()
+        db.commit()
     return rows
 
-
-def add_urls_mp(pages_data, page_id=None):
+def add_urls_mp(pages_data, page_id=None, dbsettings=None):
     rows = 0
     if pages_data !=[]:
-        db = get_connect()
-        rows = add_urls(pages_data, db)
-        db.close()
+        dbconn = get_connect(dbsettings)
+        rows = add_urls(pages_data, dbconn)
+        dbconn.close()
     return rows, page_id

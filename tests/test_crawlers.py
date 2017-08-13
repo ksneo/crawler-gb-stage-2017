@@ -1,4 +1,5 @@
 import pytest
+import logging
 import log
 import settings
 from test_crawlers_fixtures import *
@@ -8,7 +9,9 @@ from robots import RobotsTxt
 from database import get_pages_rows, add_robots, connect
 
 
-def get_connect(conn_settings=settings.TEST_DATABASE):
+def get_connect(conn_settings=None):
+    conn_settings = conn_settings or settings.DB
+    logging.debug("get_connect: connect to %s", conn_settings)
     return MySQLdb.connect(**conn_settings)
 
 def setup_module(module):
@@ -57,6 +60,7 @@ def describe_crawlers_module():
             assert result == 51770
         #@pytest.mark.skip(reason="wait improve close crawler")
         def it_method_scan_urls_return_add_urls_count_multi():
+            settings.DB = settings.TEST_DATABASE
             database.get_connect = get_connect
             settings.MULTI_PROCESS = True
             database.connect(settings.TEST_DATABASE)
