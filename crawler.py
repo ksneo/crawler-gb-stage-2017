@@ -39,17 +39,17 @@ def _get_content(url, timeout=60):
             content = rd.read().decode(charset)
     except UnicodeDecodeError as e:
         logging.error('_get_content: url = %s, charset = %s, error = %s', url, charset, e)
-        raise UnicodeDecodeError
+        raise UnicodeDecodeError(e)
 
     logging.info('_get_content: %s loaded ...%s bytes' % (url, len(content)))
     return content
 
 
 def _get_content_mp(page, all_robots, timeout=60):
-    logging.info('get_content: start %s',page)
+    logging.info('get_content: start %s', page)
     page_id, url, site_id, base_url, found_datetime = page
     content = _get_content(url, timeout)
-    logging.info('get_content: finish %s',page)
+    logging.info('get_content: finish %s', page)
     # TODO: Выяснить тип контента
     return content, page, all_robots
 
@@ -118,11 +118,11 @@ def scan_mp(next_step=False, max_limit=0):
         if site_id not in urls_limits.keys():
             urls_limits[site_id] = 0
         urls_limits[site_id] += 1
-        # logging.info('get_content_complete:')
+        logging.info('get_content_complete:')
         if (max_limit == 0) or (urls_limits[site_id] < max_limit):
-            logging.info('get_content_complete: %s/%s %s', urls_limits[site_id], max_limit, page)
             robots = all_robots.get(site_id)
             with pool_sem:
+                logging.info('get_content_complete: add %s/%s %s', urls_limits[site_id], max_limit, page)
                 """Сканирование на наличие url'ов"""
                 pool.apply_async(sitemap.scan_urls, (content, page, robots,),
                                  callback=scan_page_complete,
@@ -151,12 +151,11 @@ def scan_mp(next_step=False, max_limit=0):
         logging.info('scan_page_complete: %s %s %s', page_id, len(new_pages_data), page_type)
         # for r in range(0, len(new_pages_data), settings.CHUNK_SIZE):
         # max_pages_limit = max_limit if max_limit > 0 and max_limit < len(new_pages_data) else len(new_pages_data)
-        for r in range(0, max_limit if max_limit > 0 else settings.CHUNK_SIZE, new_pages_data[:max_limit] if max_limit > 0 else new_pages_data):
+        for r in range(0, max_limit if max_limit > 0 else settings.CHUNK_SIZE, max_limit if max_limit > 0 else len(new_pages_data)):
             with pool_sem:
                 pool.apply_async(database.add_urls_mp,
                                  (new_pages_data[r:r + (max_limit if max_limit > 0 else settings.CHUNK_SIZE)],
-                                  page_id,
-                                  settings.DB,),
+                                  page_id,),
                                  callback=add_urls_complete,
                                  error_callback=add_urls_error)
 
@@ -165,17 +164,17 @@ def scan_mp(next_step=False, max_limit=0):
         # logging.info('add_urls_complete: %s', page_id)
         if rows > 0:
             dbconn = database.get_connect()
-            database.update_last_scan_date(page_id, dbconn)
+            database.update_last_scan_date(page_id, )
             dbconn.close()
 
     def add_urls_error(*error):
-        logging.error('add_urls_error: %s', error)
+        logging.error('add_urls_error: %s', (error,))
         # TODO: Поставить сбойнувший CHUNK в очередь
         # TODO: Посмотреть что сюда передается и можно ли здесь закрыть соединение
         # или все таки закрывать соединение в самой функции
 
     def scan_page_error(*error):
-        logging.error('scan_page_error: %s', error)
+        logging.error('scan_page_error: %s', (error,))
 
     global pool
     pool = Pool(settings.POOL_SIZE)
@@ -214,7 +213,7 @@ def close_pool_wait(add_urls_total):
     count = 0
     while len(pool._cache) > 0:
         # Ожидание опустошения пула
-        # logging.info('close_pool_wait: %s %s', count, len(pool._cache))
+        logging.info('close_pool_wait: %s %s', count, len(pool._cache))
         count = max(count, max(pool._cache if pool._cache else [0, ]))
         time.sleep(1)
     pool.close()

@@ -66,7 +66,7 @@ def add_robots(db=None):
 
 def _not_have_pages(db=None):
     """ Возвращает rows([site_name, site_id]) у которых нет страниц"""
-    db = db or connection
+    db = db or connect()
     with db.cursor() as c:
         c.execute('select s.Name, s.ID '
                     'from sites s '
@@ -104,14 +104,15 @@ def update_person_page_rank(page_id, ranks, found_datetime, db=None):
                     db.commit()
 
 
-def update_last_scan_date(page_id, db=None):
-    db = db or connection
+def update_last_scan_date(page_id, db=connect()):
+    # db = db or connection
     with db.cursor() as c:
         logging.debug('update_last_scan_date: update pages set LastScanDate=%s where ID=%s' % (datetime.datetime.now(), page_id))
         c.execute('update pages set LastScanDate=%s where ID=%s',
                   (datetime.datetime.now(), page_id))
 
         db.commit()
+    db.close()
 
 
 def get_pages_rows(last_scan_date=None, max_limit=0, db=None):
@@ -163,10 +164,23 @@ def add_urls(pages_data, db=None):
     return rows
 
 
-def add_urls_mp(pages_data, page_id=None, dbsettings=None):
+def add_urls_mp(pages_data, page_id=None, db=connect()):
+    logging.info('add_urls_mp inserting %s', len(pages_data))
     rows = 0
-    if pages_data !=[]:
-        dbconn = get_connect(dbsettings)
-        rows = add_urls(pages_data, dbconn)
-        dbconn.close()
+    INSERT = ('INSERT INTO pages (SiteID, Url, FoundDateTime, LastScanDate, hash_url) '
+              'VALUES (%(site_id)s, %(url)s, %(found_date_time)s, '
+              '%(last_scan_date)s, MD5(%(url)s)) '
+              'ON DUPLICATE KEY UPDATE FoundDateTime=%(found_date_time)s')
+
+    logging.info('add_urls_mp inserting %s', db)
+    with db.cursor() as c:
+        try:
+            c.executemany(INSERT, pages_data)
+            rows += c.rowcount
+            db.commit()
+        except MySQLdb.Error as e:
+            logging.info('add_urls_mp exception %s', e)
+            raise Exception(e, pages_data, page_id)
+        db.close()
+    logging.info('add_urls_mp complete %s', len(pages_data))
     return rows, page_id
