@@ -104,8 +104,9 @@ def update_person_page_rank(page_id, ranks, found_datetime, db=None):
                     db.commit()
 
 
-def update_last_scan_date(page_id, db=connect()):
+def update_last_scan_date(page_id, db=None):
     # db = db or connection
+    db = MySQLdb.connect(**settings.DB)
     with db.cursor() as c:
         logging.debug('update_last_scan_date: update pages set LastScanDate=%s where ID=%s' % (datetime.datetime.now(), page_id))
         c.execute('update pages set LastScanDate=%s where ID=%s',
@@ -171,16 +172,18 @@ def add_urls_mp(pages_data, page_id=None, db=connect()):
               'VALUES (%(site_id)s, %(url)s, %(found_date_time)s, '
               '%(last_scan_date)s, MD5(%(url)s)) '
               'ON DUPLICATE KEY UPDATE FoundDateTime=%(found_date_time)s')
-
-    logging.info('add_urls_mp inserting %s', db)
+    db = MySQLdb.connect(**settings.DB)
+    # while len(pages_data) > rows:
     with db.cursor() as c:
         try:
+            logging.info('add_urls_mp inserting %s', pages_data[rows])
             c.executemany(INSERT, pages_data)
             rows += c.rowcount
             db.commit()
+            # rows += 1
         except MySQLdb.Error as e:
             logging.info('add_urls_mp exception %s', e)
-            raise Exception(e, pages_data, page_id)
-        db.close()
+            raise Exception(e, pages_data[rows:], page_id)
+    db.close()
     logging.info('add_urls_mp complete %s', len(pages_data))
     return rows, page_id
