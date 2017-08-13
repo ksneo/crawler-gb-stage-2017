@@ -161,7 +161,7 @@ def scan_mp(next_step=False, max_limit=0):
 
     def add_urls_complete(*args):
         rows, page_id = args[0]
-        #logging.info('add_urls_complete: %s', page_id)
+        # logging.info('add_urls_complete: %s', page_id)
         if rows > 0:
             dbconn = database.get_connect()
             database.update_last_scan_date(page_id, dbconn)
