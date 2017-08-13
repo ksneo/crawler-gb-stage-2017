@@ -67,6 +67,7 @@ def scan(next_step=False, max_limit=0):
         result = scan_sp(next_step, max_limit)
     return result
 
+
 def scan_sp(next_step=False, max_limit=0):
     keywords, all_robots = _init_crawler()
     pages = database.get_pages_rows(None)
@@ -116,7 +117,7 @@ def scan_mp(next_step=False, max_limit=0):
         if site_id not in urls_limits.keys():
             urls_limits[site_id] = 0
         urls_limits[site_id] += 1
-        #logging.info('get_content_complete:')
+        # logging.info('get_content_complete:')
         if (max_limit == 0) or (urls_limits[site_id] < max_limit):
             logging.info('get_content_complete: %s/%s %s', urls_limits[site_id], max_limit, page)
             robots = all_robots.get(site_id)
@@ -152,7 +153,7 @@ def scan_mp(next_step=False, max_limit=0):
         for r in range(0, max_pages_limit, settings.CHUNK_SIZE):
             with pool_sem:
                 pool.apply_async(database.add_urls_mp,
-                                 (new_pages_data[r:r + settings.CHUNK_SIZE],
+                                 (new_pages_data[r:r + max_pages_limit],
                                   page_id,
                                   settings.DB,),
                                  callback=add_urls_complete,
@@ -196,13 +197,13 @@ def scan_mp(next_step=False, max_limit=0):
             pool.apply_async(_get_content_mp, (page, all_robots,),
                              callback=get_content_complete,
                              error_callback=get_content_error)
-            #logging.info('page_added: %s %s', len(pool._cache), page)
+            # logging.info('page_added: %s %s', len(pool._cache), page)
             if len(pool._cache) > settings.POOL_SIZE * 2:
                 time.sleep(1)
-            #time.sleep(len(pool._cache) // settings.POOL_SIZE + 1)
+            # time.sleep(len(pool._cache) // settings.POOL_SIZE + 1)
     dbconn.close()
     close_pool_wait(add_urls_total)
-    #logging.info('Crawler.scan: Add %s new urls on date %s', add_urls_total, 'NULL')
+    # logging.info('Crawler.scan: Add %s new urls on date %s', add_urls_total, 'NULL')
 
     return close_pool_wait(add_urls_total)
 
@@ -212,7 +213,7 @@ def close_pool_wait(add_urls_total):
     count = 0
     while len(pool._cache) > 0:
         # Ожидание опустошения пула
-        #logging.info('close_pool_wait: %s %s', count, len(pool._cache))
+        # logging.info('close_pool_wait: %s %s', count, len(pool._cache))
         count = max(count, max(pool._cache if pool._cache else [0, ]))
         time.sleep(1)
     pool.close()
