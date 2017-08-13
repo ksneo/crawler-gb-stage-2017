@@ -5,6 +5,7 @@ import io
 import re
 import logging
 import datetime
+import settings
 from log import log_with
 # import database as db
 
@@ -13,7 +14,7 @@ SM_TYPE_XML = 0
 SM_TYPE_HTML = 1
 SM_TYPE_TXT = 2
 SM_TYPE_REC = 3 # рекурсивный sitemap содержит ссылки на другие sitemap
-
+SM_TYPE_RSS = 4
 
 def _esc_amp(text):
     """ text строка, возвращает строку с замененными & """
@@ -42,13 +43,15 @@ def get_file_type(sitemap):
     xml_pattern = "<urlset"
     html_pattern = "<!DOCTYPE"
     rec_pattern = "<sitemapindex"
-
+    rss_pattern = "<rss"
     if sitemap.find(xml_pattern) >= 0:
         return SM_TYPE_XML
     elif sitemap.find(html_pattern) >= 0:
         return SM_TYPE_HTML
     elif sitemap.find(rec_pattern) >= 0:
         return SM_TYPE_REC
+    elif sitemap.find(rss_pattern) >=0:
+        return SM_TYPE_RSS
     else:
         return SM_TYPE_TXT
 
@@ -70,7 +73,8 @@ def _parse_txt(content):
         content - содержимое sitemap в текстовом виде
     """
     pattern = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
-    return re.findall(pattern, content, re.MULTILINE)
+    result = re.findall(pattern, content, re.MULTILINE)
+    return result
 
 
 def _parse_html(content):
@@ -114,6 +118,8 @@ def _get_urls(content, base_url, sitemap_type):
             urls_list = _parse_txt(content)
         elif sitemap_type == SM_TYPE_REC:
             urls_list = _parse_xml(content, 'sitemap/loc')
+        elif sitemap_type == SM_TYPE_RSS:
+            urls_list = _parse_xml(content, 'item/link')
     except Exception as ex:
         logging.error("sitemap.get_urls: site %s, error %s", base_url, ex)
     return urls_list
@@ -128,6 +134,18 @@ def _filter_robots(urls, robots):
 
 def _filter_domain(urls, base_url):
     return [url for url in urls if url.startswith(base_url)]
+
+
+def _filter_test(urls, page_url):
+    """
+        фильтр для отладки может записывать в лог неправильные url
+        и url файла где эта ссылка была найдена
+    """
+    for url in urls:
+        if url.endswith('>'):
+            logging.debug('filter_test: url = %s page_url = %s', url, page_url)
+
+    return urls
 
 
 def scan_urls(content, page, robots):
@@ -147,6 +165,8 @@ def scan_urls(content, page, robots):
 
     urls = _filter_domain(urls, base_url)
     urls = _filter_robots(urls, robots)
+    if settings.DEBUG:
+        urls = _filter_test(urls, page_url)
     new_pages_data = [{
         'site_id': site_id,
         'url': url,
