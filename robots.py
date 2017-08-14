@@ -29,30 +29,17 @@ class RobotsTxt(RobotFileParser):
         super().parse(lines)
 
 
-def process_robots(robots):
+def process_robots(robots_url):
     """
         Производит обработку файлов robots.txt
         - добавляет в базу новые файлы robots
-        - создает объекты из файлов robots.txt,
+        - создает объекты из файла robots.txt,
             которые умеют проверять ссылки и содежрат sitemaps
-        - возвращает словарь site_id : RobotsTxt
+        - возвращает RobotsTxt
     """
-    result = {}
-    # database.add_robots()
-    # robots_rows = database.get_robots()
-    for robot in robots:
-        page_id, url, site_id, base_url = robot
-        request_time = time.time()
-        logging.info('process_robots #BEGIN %s url %s, base_url %s', page_id, url, base_url)
-        robots_file = RobotsTxt(url)
-        robots_file.read()
-        result[site_id] = robots_file
-        # urls = robots_file.sitemaps
-        # urls_count = database._add_urls(sitemap.add_urls(urls, robot, sitemap.SM_TYPE_TXT))
-        request_time = time.time() - request_time
-        logging.info('process_robots #END base_url %s, time %s',
-                        base_url, request_time)
-    return result
+    robots_file = RobotsTxt(robots_url)
+    robots_file.read()
+    return robots_file
 
 
 def _is_robot_txt(url):

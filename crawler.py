@@ -43,7 +43,11 @@ def _get_content(url, timeout=60):
                       url, charset, e)
         if settings.MULTI_PROCESS:
             raise UnicodeDecodeError(e)
-
+    except Exception as e:
+        logging.error('_get_content: url = %s, error = %s',
+                      url, e)
+        if settings.MULTI_PROCESS:
+            raise Exception(e)
     logging.info('_get_content: %s loaded ...%s bytes' % (url, len(content)))
     return content
 
@@ -59,7 +63,18 @@ def _get_content_mp(page, all_robots, timeout=60):
 
 def _init_crawler():
     database.add_robots()
-    all_robots = robots.process_robots(database.get_robots())
+    all_robots = {}
+    for robots_page in database.get_robots():
+        page_id, robots_url, site_id, base_url = robots_page
+        all_robots[site_id] = robots.process_robots(robots_url)
+        if all_robots[site_id].sitemaps == []:
+            index_page = [{
+                         'site_id': site_id,
+                         'url': base_url,
+                         'found_date_time': datetime.datetime.now(),
+                         'last_scan_date': None
+                          }]
+            database.add_urls(index_page)
     keywords = database.load_persons()
     return keywords, all_robots
 
