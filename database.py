@@ -6,7 +6,8 @@ import MySQLdb
 connection = None
 
 
-def connect(conn_settings=settings.DB):
+def connect(conn_settings=None):
+    conn_settings = conn_settings or settings.DB
     global connection
     connection = MySQLdb.connect(**conn_settings)
     return connection
@@ -16,7 +17,7 @@ def close():
     connection.close()
 
 
-def get_connect(conn_settings=settings.DB):
+def get_connect(conn_settings=None):
     conn_settings = conn_settings or settings.DB
     logging.debug("get_connect: connect to %s", conn_settings)
 
@@ -28,7 +29,8 @@ def get_connect(conn_settings=settings.DB):
         return connection if connection else connect(conn_settings)
 
 
-def load_persons(conn_settings=settings.DB):
+def load_persons(conn_settings=None):
+    conn_settings = conn_settings or settings.DB
 
     keywords = {}
     try:
@@ -50,7 +52,8 @@ def load_persons(conn_settings=settings.DB):
     return keywords
 
 
-def get_robots(conn_settings=settings.DB):
+def get_robots(conn_settings=None):
+    conn_settings = conn_settings or settings.DB
 
     SELECT = ('SELECT p.ID, p.Url, p.SiteID, s.Name FROM pages p '
               'JOIN sites s ON (s.ID=p.SiteID) '
@@ -67,7 +70,8 @@ def get_robots(conn_settings=settings.DB):
         logging.error('get_robots exception: %s', e)
 
 
-def add_robots(conn_settings=settings.DB):
+def add_robots(conn_settings=None):
+    conn_settings = conn_settings or settings.DB
     """ Добавляет в pages ссылки на robots.txt,
         если их нет для определенных сайтов  """
 
@@ -84,10 +88,11 @@ def add_robots(conn_settings=settings.DB):
     return _add_robots
 
 
-def _not_have_pages(conn_settings=settings.DB):
+def _not_have_pages(conn_settings=None):
+    conn_settings = conn_settings or settings.DB
     """ Возвращает rows([site_name, site_id]) у которых нет страниц"""
-    db = get_connect(conn_settings)
     with db.cursor() as c:
+        db = get_connect(conn_settings)
         try:
             c.execute('select s.Name, s.ID '
                       'from sites s '
@@ -100,7 +105,8 @@ def _not_have_pages(conn_settings=settings.DB):
     return rows
 
 
-def update_person_page_rank(page_id, ranks, conn_settings=settings.DB):
+def update_person_page_rank(page_id, ranks, conn_settings=None):
+    conn_settings = conn_settings or settings.DB
     logging.info('update_person_page_rank: %s %s', page_id, ranks)
     if ranks:
         # logging.debug('update_person_page_rank: %s %s', page_id, ranks)
@@ -139,7 +145,8 @@ def update_person_page_rank(page_id, ranks, conn_settings=settings.DB):
             logging.error('update_person_page_rank exception: %s', e)
 
 
-def update_last_scan_date(page_id, conn_settings=settings.DB):
+def update_last_scan_date(page_id, conn_settings=None):
+    conn_settings = conn_settings or settings.DB
 
     rows = -1
     try:
@@ -163,7 +170,8 @@ def update_last_scan_date(page_id, conn_settings=settings.DB):
     return rows
 
 
-def get_pages_rows(last_scan_date=None, max_limit=0, conn_settings=settings.DB):
+def get_pages_rows(last_scan_date=None, max_limit=0, conn_settings=None):
+    conn_settings = conn_settings or settings.DB
     logging.debug('get_pages_rows: %s', last_scan_date)
     SELECT = 'select p.id, p.Url, p.SiteID, s.Name '\
              'from pages p '\
@@ -189,7 +197,8 @@ def get_pages_rows(last_scan_date=None, max_limit=0, conn_settings=settings.DB):
         return []
 
 
-def add_urls(pages_data, page_id=None, conn_settings=settings.DB):
+def add_urls(pages_data, page_id=None, conn_settings=None):
+    conn_settings = conn_settings or settings.DB
     logging.debug('add_urls%s inserting %s', ' multiprocessing' if settings.MULTI_PROCESS else ' solo', len(pages_data))
     rows = -1  # Для корректного возврата в sp
     INSERT = ('INSERT INTO pages '
