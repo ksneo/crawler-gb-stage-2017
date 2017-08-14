@@ -80,7 +80,7 @@ def scan_sp(next_step=False, max_limit=0):
     # то найти наименьшую дату и выбрать по ней.
     add_urls_total = 0
     for page in pages:
-        page_id, url, site_id, base_url= page
+        page_id, url, site_id, base_url = page
         request_time = time.time()
         logging.info('#BEGIN %s url %s, base_url %s', page_id, url, base_url)
         content = _get_content(url)
@@ -90,10 +90,13 @@ def scan_sp(next_step=False, max_limit=0):
             page_type = sitemap.get_file_type(content)
             add_urls_count = 0
         else:
-            new_pages_data, page_id, page_type = sitemap.scan_urls(content, page, robots)
+            new_pages_data, page_id, page_type = sitemap.scan_urls(content,
+                                                                   page,
+                                                                   robots)
             if len(new_pages_data) > max_limit:
                 new_pages_data = new_pages_data[:max_limit + 1]
-            add_urls_count, page_id = database.add_urls(new_pages_data, page_id)
+            add_urls_count, page_id = database.add_urls(new_pages_data,
+                                                        page_id)
             if page_type != sitemap.SM_TYPE_HTML:
                 database.update_last_scan_date(page_id)
 
@@ -106,10 +109,11 @@ def scan_sp(next_step=False, max_limit=0):
 
         request_time = time.time() - request_time
         logging.info('#END url %s, base_url %s, add urls %s, time %s',
-                        url, base_url, add_urls_count, request_time)
+                     url, base_url, add_urls_count, request_time)
         add_urls_total = add_urls_total + add_urls_count
 
-    logging.info('Crawler.scan: Add %s new urls on date %s', add_urls_total, 'NULL')
+    logging.info('Crawler.scan: Add %s new urls on date %s', add_urls_total,
+                 'NULL')
     return add_urls_total
 
 
@@ -126,16 +130,18 @@ def scan_mp(next_step=False, max_limit=0):
         if site_id not in urls_limits.keys():
             urls_limits[site_id] = 0
         urls_limits[site_id] += 1
-        logging.info('get_content_complete:')
+        logging.info('get_content_complete.')
         if (max_limit == 0) or (urls_limits[site_id] < max_limit):
             robots = all_robots.get(site_id)
             with pool_sem:
-                logging.info('get_content_complete: add %s/%s %s', urls_limits[site_id], max_limit, page)
+                logging.info('get_content_complete: add %s/%s %s',
+                             urls_limits[site_id], max_limit, page)
                 """Сканирование на наличие url'ов"""
                 pool.apply_async(sitemap.scan_urls, (content, page, robots,),
                                  callback=scan_page_complete,
                                  error_callback=scan_page_error)
-                logging.info('get_content_complete: added sitemap.scan_urls %s', page)
+                logging.info('get_content_complete: added sitemap.scan_urls %s',
+                             page)
             if page_type == parsers.SM_TYPE_HTML:
                 """Сканирование keywords"""
                 with pool_sem:
@@ -147,16 +153,15 @@ def scan_mp(next_step=False, max_limit=0):
 
     def process_ranks_complete(*args):
         ranks, page_id = args[0]
-        # dbconn = database.get_connect()
         database.update_person_page_rank(page_id, ranks)
-        # dbconn.close()
 
     def process_ranks_error(*error):
         logging.error('process_ranks_error: %s', error)
 
     def scan_page_complete(*args):
         new_pages_data, page_id, page_type = args[0]
-        logging.info('scan_page_complete: %s %s %s', page_id, len(new_pages_data), page_type)
+        logging.info('scan_page_complete: %s %s %s',
+                     page_id, len(new_pages_data), page_type)
 
         chunk_size = settings.CHUNK_SIZE if max_limit > settings.CHUNK_SIZE else max_limit
         for r in range(0, max_limit if max_limit > 0 else len(new_pages_data), chunk_size):
@@ -171,13 +176,11 @@ def scan_mp(next_step=False, max_limit=0):
         rows, page_id = args[0]
         logging.info('add_urls_complete: %s %s', page_id, rows)
         if rows > 0:
-            # dbconn = database.get_connect()
             database.update_last_scan_date(page_id, )
-            # dbconn.close()
 
     def add_urls_error(*error):
         logging.error('add_urls_error: %s', (error,))
-        # TODO: Поставить сбойнувший CHUNK в очередь
+        # TODO: Поставить сбойнувший CHUNK в очередь (см.ниже)
         chunk = error[0][1]
         with pool_sem:
             pool.apply_async(database.add_urls, (chunk, page_id,),
@@ -197,32 +200,29 @@ def scan_mp(next_step=False, max_limit=0):
     # pool._taskqueue.maxsize = settings.POOL_SIZE * 2
 
     keywords, all_robots = _init_crawler()
-    # TODO: добавить проверку если len(pages) = 0 то найти наименьшую дату и выбрать по ней.
-    # print('Crawler.scan: pages=%s' % len(pages))
+    # TODO: добавить проверку если len(pages) = 0 то
+    # найти наименьшую дату и выбрать по ней.
     add_urls_total = 0
-    # dbconn = database.get_connect()
     for page in database.get_pages_rows(max_limit=max_limit):
-        # while len(pool._cache) > settings.POOL_SIZE * 2:
-        #         time.sleep(1)
         with pool_sem:
             add_urls_total += 1
             pool.apply_async(_get_content_mp, (page, all_robots,),
                              callback=get_content_complete,
                              error_callback=get_content_error)
-            # logging.info('page_added: %s %s', len(pool._cache), page)
+            logging.info('page_added: %s %s', len(pool._cache), page)
             if len(pool._cache) > settings.POOL_SIZE * 2:
                 time.sleep(1)
-            # time.sleep(len(pool._cache) // settings.POOL_SIZE + 1)
-    # dbconn.close()
+            time.sleep(len(pool._cache) // settings.POOL_SIZE + 1)
+
     close_pool_wait(add_urls_total)
-    # logging.info('Crawler.scan: Add %s new urls on date %s', add_urls_total, 'NULL')
+    # logging.info('Crawler.scan: Add %s new urls on date %s',
+    # add_urls_total, 'NULL')
 
     return close_pool_wait(add_urls_total)
 
 
 def close_pool_wait(add_urls_total):
     """Ожидание исчерпания очереди выполнения"""
-    # print(pool_sem.get_value())
     count = 0
     while len(pool._cache) > 0:
         # Ожидание опустошения пула
