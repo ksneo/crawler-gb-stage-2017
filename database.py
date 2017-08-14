@@ -6,7 +6,8 @@ import MySQLdb
 connection = None
 
 
-def connect(conn_settings=settings.DB):
+def connect(conn_settings=None):
+    conn_settings = conn_settings or settings.DB
     global connection
     connection = MySQLdb.connect(**conn_settings)
     return connection
@@ -30,6 +31,7 @@ def get_connect(conn_settings=None):
 
 def load_persons(conn_settings=None):
     conn_settings = conn_settings or settings.DB
+
     keywords = {}
     try:
         db = get_connect(conn_settings)
@@ -52,6 +54,7 @@ def load_persons(conn_settings=None):
 
 def get_robots(conn_settings=None):
     conn_settings = conn_settings or settings.DB
+
     SELECT = ('SELECT p.ID, p.Url, p.SiteID, s.Name FROM pages p '
               'JOIN sites s ON (s.ID=p.SiteID) '
               'WHERE p.Url like "%/robots.txt"')
@@ -68,6 +71,7 @@ def get_robots(conn_settings=None):
 
 
 def add_robots(conn_settings=None):
+    conn_settings = conn_settings or settings.DB
     """ Добавляет в pages ссылки на robots.txt,
         если их нет для определенных сайтов  """
     conn_settings = conn_settings or settings.DB
@@ -89,6 +93,7 @@ def _not_have_pages(conn_settings=None):
     conn_settings = conn_settings or settings.DB
     db = get_connect(conn_settings)
     with db.cursor() as c:
+        db = get_connect(conn_settings)
         try:
             c.execute('select s.Name, s.ID '
                       'from sites s '
@@ -143,6 +148,7 @@ def update_person_page_rank(page_id, ranks, conn_settings=None):
 
 def update_last_scan_date(page_id, conn_settings=None):
     conn_settings = conn_settings or settings.DB
+
     rows = -1
     try:
         db = get_connect(conn_settings)
