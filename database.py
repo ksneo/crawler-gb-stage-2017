@@ -146,8 +146,8 @@ def update_last_scan_date(page_id, conn_settings=settings.DB):
         db = get_connect(conn_settings)
         with db.cursor() as c:
             last_scan_date = datetime.datetime.now()
-            logging.debug('update_last_scan_date: %s %s', (last_scan_date,
-                          page_id))
+            logging.debug('update_last_scan_date: %s %s', last_scan_date,
+                          page_id)
             c.execute('update pages set LastScanDate=%s where ID=%s',
                       (last_scan_date, page_id))
             rows = c.rowcount
