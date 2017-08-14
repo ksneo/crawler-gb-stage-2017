@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 import datetime
 from io import BytesIO
-from multiprocessing import Pool, log_to_stderr, SUBDEBUG #, BoundedSemaphore, Semaphore
+from multiprocessing import Pool, log_to_stderr, SUBDEBUG
+# , BoundedSemaphore, Semaphore
 from threading import Semaphore, BoundedSemaphore
 import urllib.request
 # import asyncio
