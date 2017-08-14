@@ -14,14 +14,12 @@ def get_connect(conn_settings=None):
     logging.debug("get_connect: connect to %s", conn_settings)
     return MySQLdb.connect(**conn_settings)
 
-
 def setup_module(module):
     clean_test_db()
 
-
 def describe_crawlers_module():
     def describe_crawler():
-        # @pytest.mark.skip(reason="no way of currently testing this")
+        #@pytest.mark.skip(reason="no way of currently testing this")
         def it_method_init_crawler():
             database.connect(settings.TEST_DATABASE)
             _, robots = crawler._init_crawler()
@@ -29,7 +27,7 @@ def describe_crawlers_module():
             assert len(robots) == 2
             assert isinstance(robots[1], RobotsTxt)
 
-        # @pytest.mark.skip(reason="no way of currently testing this")
+        #@pytest.mark.skip(reason="no way of currently testing this")
         def it_method_scan_urls_return_add_urls_count():
             settings.MULTI_PROCESS = False
             database.connect(settings.TEST_DATABASE)
@@ -37,7 +35,7 @@ def describe_crawlers_module():
             database.close()
             assert result > 0
 
-        # @pytest.mark.skip(reason="no way of currently testing this")
+        #@pytest.mark.skip(reason="no way of currently testing this")
         def it_method_scan_urls_return_add_urls_count1():
             settings.MULTI_PROCESS = False
             database.connect(settings.TEST_DATABASE)
@@ -60,8 +58,7 @@ def describe_crawlers_module():
             result = crawler.scan(max_limit=50000)
             database.close()
             assert result == 51770
-
-        # @pytest.mark.skip(reason="wait improve close crawler")
+        #@pytest.mark.skip(reason="wait improve close crawler")
         def it_method_scan_urls_return_add_urls_count_multi():
             settings.DB = settings.TEST_DATABASE
             database.get_connect = get_connect

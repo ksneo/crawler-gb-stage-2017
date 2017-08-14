@@ -74,7 +74,7 @@ def add_robots(conn_settings=None):
     conn_settings = conn_settings or settings.DB
     """ Добавляет в pages ссылки на robots.txt,
         если их нет для определенных сайтов  """
-
+    conn_settings = conn_settings or settings.DB
     new_sites = _not_have_pages(conn_settings)
     ARGS = [{
             'site_id': r[1],
@@ -89,8 +89,8 @@ def add_robots(conn_settings=None):
 
 
 def _not_have_pages(conn_settings=None):
-    conn_settings = conn_settings or settings.DB
     """ Возвращает rows([site_name, site_id]) у которых нет страниц"""
+    conn_settings = conn_settings or settings.DB
     try:
         db = get_connect(conn_settings)
         with db.cursor() as c:

@@ -168,7 +168,8 @@ def scan_mp(next_step=False, max_limit=0):
             with pool_sem:
                 pool.apply_async(database.add_urls,
                                  (new_pages_data[r:r + chunk_size],
-                                  page_id,),
+                                  page_id,
+                                  settings.DB,),
                                  callback=add_urls_complete,
                                  error_callback=add_urls_error)
 
