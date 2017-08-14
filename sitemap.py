@@ -81,7 +81,7 @@ def _parse_html(content):
     """
         content - содержимое sitemap в html, для парсинга страниц на ссылки
     """
-    parser = etree.HTMLParser()
+    parser = etree.HTMLParser(recover=True)
     html_root = etree.parse(io.BytesIO(content.encode()), parser).getroot()
     xpath = './/a/@href'
     return _select_attrs(html_root, xpath)
