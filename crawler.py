@@ -224,9 +224,9 @@ def scan_mp(next_step=False, max_limit=0):
 def close_pool_wait(add_urls_total):
     """Ожидание исчерпания очереди выполнения"""
     count = 0
+    logging.info('close_pool_wait: %s %s', count, len(pool._cache))
     while len(pool._cache) > 0:
         # Ожидание опустошения пула
-        logging.info('close_pool_wait: %s %s', count, len(pool._cache))
         count = max(count, max(pool._cache if pool._cache else [0, ]))
         time.sleep(1)
     pool.close()
