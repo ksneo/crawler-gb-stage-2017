@@ -91,17 +91,17 @@ def add_robots(conn_settings=None):
 def _not_have_pages(conn_settings=None):
     conn_settings = conn_settings or settings.DB
     """ Возвращает rows([site_name, site_id]) у которых нет страниц"""
-    with db.cursor() as c:
+    try:
         db = get_connect(conn_settings)
-        try:
+        with db.cursor() as c:
             c.execute('select s.Name, s.ID '
                       'from sites s '
                       'left join pages p on (p.SiteID=s.ID) '
                       'where p.id is Null')
             rows = c.fetchall()
-        except Exception as e:
-            rows = []
-            logging.error('_not_have_pages exception: %s', e)
+    except Exception as e:
+        rows = []
+        logging.error('_not_have_pages exception: %s', e)
     return rows
 
 
