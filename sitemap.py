@@ -81,7 +81,7 @@ def _parse_html(content):
     """
         content - содержимое sitemap в html, для парсинга страниц на ссылки
     """
-    parser = etree.HTMLParser()
+    parser = etree.HTMLParser(recover=True)
     html_root = etree.parse(io.BytesIO(content.encode()), parser).getroot()
     xpath = './/a/@href'
     return _select_attrs(html_root, xpath)
@@ -156,7 +156,7 @@ def scan_urls(content, page, robots):
         возвращает tuple c типом контента и списком ссылок
     """
     logging.info('sitemap.scan_urls: %s', page)
-    page_id, page_url, site_id, base_url, found_datetime = page
+    page_id, page_url, site_id, base_url = page
     page_type = get_file_type(content)
     urls = _get_urls(content, base_url, page_type)
 
