@@ -147,9 +147,9 @@ def scan_mp(next_step=False, max_limit=0):
 
     def process_ranks_complete(*args):
         ranks, page_id = args[0]
-        dbconn = database.get_connect()
+        # dbconn = database.get_connect()
         database.update_person_page_rank(page_id, ranks)
-        dbconn.close()
+        # dbconn.close()
 
     def process_ranks_error(*error):
         logging.error('process_ranks_error: %s', error)
@@ -200,7 +200,7 @@ def scan_mp(next_step=False, max_limit=0):
     # TODO: добавить проверку если len(pages) = 0 то найти наименьшую дату и выбрать по ней.
     # print('Crawler.scan: pages=%s' % len(pages))
     add_urls_total = 0
-    dbconn = database.get_connect()
+    # dbconn = database.get_connect()
     for page in database.get_pages_rows(max_limit=max_limit):
         # while len(pool._cache) > settings.POOL_SIZE * 2:
         #         time.sleep(1)
@@ -213,7 +213,7 @@ def scan_mp(next_step=False, max_limit=0):
             if len(pool._cache) > settings.POOL_SIZE * 2:
                 time.sleep(1)
             # time.sleep(len(pool._cache) // settings.POOL_SIZE + 1)
-    dbconn.close()
+    # dbconn.close()
     close_pool_wait(add_urls_total)
     # logging.info('Crawler.scan: Add %s new urls on date %s', add_urls_total, 'NULL')
 
