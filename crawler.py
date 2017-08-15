@@ -95,7 +95,7 @@ def scan_sp(next_step=False, max_limit=0):
                                                                    robots)
             if len(new_pages_data) > max_limit:
                 new_pages_data = new_pages_data[:max_limit + 1]
-            add_urls_count, page_id = database.add_urls(new_pages_data,
+            add_urls_count, page_id, attempts = database.add_urls(new_pages_data,
                                                         page_id)
             if page_type != sitemap.SM_TYPE_HTML:
                 database.update_last_scan_date(page_id)
@@ -183,10 +183,14 @@ def scan_mp(next_step=False, max_limit=0):
         logging.error('add_urls_error: %s', (error,))
         # TODO: Поставить сбойнувший CHUNK в очередь (см.ниже)
         chunk = error[0][1]
-        with pool_sem:
-            pool.apply_async(database.add_urls, (chunk, page_id,),
-                             callback=add_urls_complete,
-                             error_callback=add_urls_error)
+        # Спасём котёнка :)
+        attempts = chunk[0][1][:-1][0]
+        error = error[0][0][0]
+        if attempts > 0:
+            with pool_sem:
+                pool.apply_async(database.add_urls, (chunk, page_id, attempts,),
+                                 callback=add_urls_complete,
+                                 error_callback=add_urls_error)
 
     def scan_page_error(*error):
         logging.error('scan_page_error: %s', (error,))

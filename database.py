@@ -197,7 +197,7 @@ def get_pages_rows(last_scan_date=None, max_limit=0, conn_settings=None):
         return []
 
 
-def add_urls(pages_data, page_id=None, conn_settings=None):
+def add_urls(pages_data, page_id=None, conn_settings=None, attempts=5):
     conn_settings = conn_settings or settings.DB
     logging.debug('add_urls%s inserting %s', ' multiprocessing' if settings.MULTI_PROCESS else ' solo', len(pages_data))
     rows = -1  # Для корректного возврата в sp
@@ -221,8 +221,8 @@ def add_urls(pages_data, page_id=None, conn_settings=None):
         logging.error('add_urls%s exception %s', ' multiprocessing' if settings.MULTI_PROCESS else ' solo', e)
         if settings.MULTI_PROCESS:
             # передать управление в crawlers.add_urls_error
-            raise Exception(e, pages_data, page_id)
+            raise Exception(e, pages_data, page_id, attempts-1)
 
     logging.info('add_urls%s complete %s', ' multiprocessing' if settings.MULTI_PROCESS else ' solo', len(pages_data))
 
-    return rows, page_id
+    return rows, page_id, attempts-1
