@@ -174,7 +174,7 @@ def scan_mp(next_step=False, max_limit=0):
                                  error_callback=add_urls_error)
 
     def add_urls_complete(*args):
-        rows, page_id = args[0]
+        rows, page_id, attempts = args[0]
         logging.info('add_urls_complete: %s %s', page_id, rows)
         if rows > 0:
             database.update_last_scan_date(page_id, )
