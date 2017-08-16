@@ -57,7 +57,7 @@ def parse_html(page_content, words_dict):
     if get_file_type(page_content) != SM_TYPE_HTML:
         return {}
 
-    min_len = 3 # минимальная длина слова которе считается словом
+    min_len = 3  # минимальная длина слова которе считается словом
     result = {}
     logging.debug('parse_html: %s', words_dict)
     try:

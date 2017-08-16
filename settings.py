@@ -36,4 +36,4 @@ DB = DATABASE
 
 DEBUG = False
 LOG_FILE = 'crawler.log'
-MULTI_PROCESS = False
+MULTI_PROCESS = True
